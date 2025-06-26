@@ -27,7 +27,7 @@ const Login = () => {
       <div className="login-card">
         <div className="logo">S</div>
         
-        <h1 className="title">Salah Data System</h1>
+        <h1 className="title">Alex In LED</h1>
         <p className="subtitle">Sign in to your account</p>
 
         <form onSubmit={handleSubmit}>

@@ -1,202 +1,134 @@
-// src/components/Layout.jsx
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  HomeIcon,
-  DocumentIcon,
-  ShareIcon,
-  MagnifyingGlassIcon,
-  UserCircleIcon,
-  Cog6ToothIcon,
-  ArrowRightOnRectangleIcon,
-  Bars3Icon,
-  XMarkIcon,
-  ShieldCheckIcon,
-} from '@heroicons/react/24/outline';
+import { NavLink } from 'react-router-dom';
+import moment from 'moment-hijri';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, currentView, onViewChange }) => {
   const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const todayHijri = moment().format('iD iMMMM iYYYY');
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, current: true },
-    { name: 'My Files', href: '/files', icon: DocumentIcon, current: false },
-    { name: 'Shared', href: '/shared', icon: ShareIcon, current: false },
-    { name: 'Search', href: '/search', icon: MagnifyingGlassIcon, current: false },
+  const allMenu = [
+    { id: 'dashboard', name: 'Dashboard', icon: '📊', description: 'Overview & Statistics' },
+    { id: 'calendar',  name: 'Calendar',  icon: '📅', description: 'Daily Order Schedule' },
+    { id: 'inventory', name: 'Inventory', icon: '📦', description: 'Screen Availability' },
+    { id: 'orders',    name: 'Orders',    icon: '📋', description: 'Order Management' },
+    { id: 'finance',   name: 'Finance',   icon: '💰', description: 'Revenue & Expenses' },
+    { id: 'users',     name: 'Users',     icon: '👥', description: 'User Management' },
   ];
-
-  const handleLogout = async () => {
-    await logout();
-  };
+   const menuItems = user?.role === 'user'
+   ? allMenu.filter(item => item.id === 'calendar')
+   : allMenu;
 
   return (
-    <div className="h-screen flex overflow-hidden">
-      {/* Mobile sidebar overlay */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex z-40 lg:hidden"
-          >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => setSidebarOpen(false)}
-            />
-            
-            <motion.div
-              initial={{ x: -300 }}
-              animate={{ x: 0 }}
-              exit={{ x: -300 }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="relative flex-1 flex flex-col max-w-xs w-full"
-            >
-              <Sidebar navigation={navigation} user={user} onLogout={handleLogout} mobile />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-64">
-          <Sidebar navigation={navigation} user={user} onLogout={handleLogout} />
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        {/* Top navigation */}
-        <div className="relative z-10 flex-shrink-0 flex h-16 glass-card border-0 border-b border-white/20">
-          <button
-            className="px-4 border-r border-white/20 text-gray-300 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <span className="sr-only">Open sidebar</span>
-            <Bars3Icon className="h-6 w-6" />
-          </button>
-          
-          <div className="flex-1 px-4 flex justify-between items-center">
-            <div className="flex-1 flex">
-              <h1 className="text-xl font-semibold text-white">
-                Welcome back, {user?.first_name}
-              </h1>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f9fa' }}>
+      {/* Sidebar */}
+      <div style={{
+        width: sidebarCollapsed ? '60px' : '250px',
+        background: 'white',
+        borderRight: '1px solid #e5e7eb',
+        transition: 'width 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Sidebar Header */}
+        <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {!sidebarCollapsed && (
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '32px', height: '32px', background: '#3b82f6', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold', marginRight: '12px', fontSize: '18px' }}>
+                📺
+              </div>
+              <h1 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>LED Rental</h1>
             </div>
-            
-            <div className="ml-4 flex items-center space-x-4">
-              {/* User menu */}
-              <div className="relative">
-                <div className="flex items-center space-x-3 glass-button px-3 py-2">
-                  <div className="flex-shrink-0">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                      <span className="text-sm font-medium text-white">
-                        {user?.first_name?.[0]}{user?.last_name?.[0]}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="hidden md:block">
-                    <div className="text-sm font-medium text-white">{user?.full_name}</div>
-                    <div className="text-xs text-gray-300">{user?.role}</div>
-                  </div>
+          )}
+          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', color: '#6b7280' }}>
+            {sidebarCollapsed ? '→' : '←'}
+          </button>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav style={{ padding: '8px', flex: 1 }}>
+          {menuItems.map(item => (
+            <NavLink
+              key={item.id}
+              to={`/${item.id}`}
+              style={({ isActive }) => ({
+                width: '100%',
+                textAlign: 'left',
+                padding: '12px',
+                borderRadius: '8px',
+                marginBottom: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+                background: isActive ? '#eff6ff' : 'transparent',
+                color:      isActive ? '#1d4ed8' : '#374151',
+                borderLeft: isActive ? '4px solid #3b82f6' : '4px solid transparent'
+              })}
+              title={sidebarCollapsed ? item.name : ''}
+            >
+              <span style={{ fontSize: '20px', marginRight: sidebarCollapsed ? '0' : '12px' }}>{item.icon}</span>
+              {!sidebarCollapsed && (
+                <div>
+                  <div style={{ fontWeight: '500', fontSize: '14px' }}>{item.name}</div>
+                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{item.description}</div>
+                </div>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* User Section */}
+        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb', background: 'white' }}>
+          {!sidebarCollapsed ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ width: '32px', height: '32px', background: '#d1d5db', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '500', color: '#374151', marginRight: '12px' }}>
+                  {user?.first_name?.[0]}{user?.last_name?.[0]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1f2937', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.full_name}</div>
+                  <div style={{ fontSize: '12px', color: '#6b7280', textTransform: 'capitalize' }}>{user?.role}</div>
                 </div>
               </div>
-            </div>
-          </div>
+              <button onClick={logout} style={{ width: '100%', textAlign: 'left', padding: '8px', fontSize: '14px', color: '#dc2626', background: 'none', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+                🚪 Sign Out
+              </button>
+            </>
+          ) : (
+            <button onClick={logout} style={{ width: '100%', padding: '8px', color: '#dc2626', background: 'none', border: 'none', borderRadius: '6px', cursor: 'pointer', textAlign: 'center' }} title="Sign Out">
+              🚪
+            </button>
+          )}
         </div>
-
-        {/* Main content area */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              {children}
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-};
-
-const Sidebar = ({ navigation, user, onLogout, mobile = false }) => {
-  return (
-    <div className="flex flex-col h-full glass-card border-0 border-r border-white/20">
-      {/* Logo */}
-      <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-white/20">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-3 glow-effect"
-        >
-          <ShieldCheckIcon className="h-6 w-6 text-white" />
-        </motion.div>
-        <span className="text-xl font-bold gradient-text">SecureVault</span>
       </div>
 
-      {/* Navigation */}
-      <nav className="mt-5 flex-1 flex flex-col divide-y divide-white/10 overflow-y-auto">
-        <div className="px-2 space-y-1">
-          {navigation.map((item, index) => (
-            <motion.a
-              key={item.name}
-              href={item.href}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`
-                group flex items-center px-2 py-2 text-sm font-medium rounded-lg
-                ${item.current
-                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-blue-500/30'
-                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                } transition-all duration-200
-              `}
-            >
-              <item.icon
-                className={`mr-3 flex-shrink-0 h-6 w-6 ${
-                  item.current ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-300'
-                }`}
-              />
-              {item.name}
-            </motion.a>
-          ))}
-        </div>
-      </nav>
-
-      {/* User section */}
-      <div className="flex-shrink-0 flex border-t border-white/20 p-4">
-        <div className="flex-shrink-0 w-full group block">
-          <div className="flex items-center">
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Top Header */}
+        <header style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 24px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                <span className="text-sm font-medium text-white">
-                  {user?.first_name?.[0]}{user?.last_name?.[0]}
-                </span>
+              <h1 style={{ margin: '0 0 4px 0', fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
+                {menuItems.find(item => item.id === currentView)?.name || 'Dashboard'}
+              </h1>
+              <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+                {menuItems.find(item => item.id === currentView)?.description || 'LED Screen Rental Management'}
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
-            </div>
-            <div className="ml-3 flex-1">
-              <p className="text-sm font-medium text-white">{user?.full_name}</p>
-              <p className="text-xs text-gray-300">{user?.email}</p>
+              <div style={{ fontSize: '13px', color: '#9ca3af' }}>{todayHijri} (Hijri)</div>
             </div>
           </div>
-          
-          <div className="mt-3 space-y-1">
-            <button className="glass-button w-full flex items-center px-3 py-2 text-sm text-gray-300 hover:text-white">
-              <Cog6ToothIcon className="mr-3 h-5 w-5" />
-              Settings
-            </button>
-            <button
-              onClick={onLogout}
-              className="glass-button w-full flex items-center px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-red-500/20"
-            >
-              <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
-              Sign out
-            </button>
-          </div>
-        </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main style={{ flex: 1, overflow: 'auto', background: '#f8f9fa' }}>
+          {children}
+        </main>
       </div>
     </div>
   );
