@@ -730,9 +730,6 @@ const handleSubmit = async (e) => {
                       <span style={{ color: '#0c4a6e', fontWeight: '600' }}>
                         {req.dimensions_rows || 0} × {req.dimensions_columns || 0} panels = {getCalculatedSqm(req)} m²
                       </span>
-                      <small style={{ color: '#0c4a6e' }}>
-                        (0.5m × 0.5m per panel)
-                      </small>
                     </div>
                   </div>
 
@@ -746,7 +743,7 @@ const handleSubmit = async (e) => {
                       color: '#6b7280'
                     }}>
                       <div>
-                        📐 Total size: {req.dimensions_rows * 0.5}m × {req.dimensions_columns * 0.5}m<br/>
+                        📐 Total size: {req.dimensions_rows}m × {req.dimensions_columns}m<br/>
                         📊 Square meters: {req.sqm_required}m²<br/>
                         📺 Estimated Resolution: {req.dimensions_rows * 64} × {req.dimensions_columns * 64} pixels
                       </div>
