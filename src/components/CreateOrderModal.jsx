@@ -258,7 +258,7 @@ const validateForm = () => {
     newErrors.push('End date is required');
   }
 
-  if (formData.start_date && formData.end_date && formData.start_date >= formData.end_date) {
+  if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) {
     newErrors.push('End date must be after start date');
   }
 
