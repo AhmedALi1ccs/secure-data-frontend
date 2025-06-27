@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 8080,
-    host: true // ← this exposes the server to the network
+    host: true,
+    allowedHosts: ['king-prawn-app-9yzxy.ondigitalocean.app']
   }
 })
