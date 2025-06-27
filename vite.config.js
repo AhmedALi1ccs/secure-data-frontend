@@ -1,9 +1,25 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+const path = require('path');
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 8080
-  }
-})
+module.exports = {
+  transpileDependencies: true,
+  chainWebpack: (config) => {
+    const svgRule = config.module.rule('svg');
+    svgRule.uses.clear();
+    
+    svgRule
+      .use('babel-loader')
+      .loader('babel-loader')
+      .end()
+      .use('vue-svg-loader')
+      .loader('vue-svg-loader');
+  },
+  configureWebpack: {
+    resolve: {
+      alias: {
+        assets: path.resolve(__dirname, 'src/assets'),
+        models: path.resolve(__dirname, './src/models'),
+      },
+    },
+  },
+
+};
