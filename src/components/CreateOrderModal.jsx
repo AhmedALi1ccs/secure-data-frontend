@@ -199,7 +199,7 @@ useEffect(() => {
       const columns = field === 'dimensions_columns' ? parseInt(value) || 0 : updatedRequirements[index].dimensions_columns || 0;
       
       // Calculate square meters (assuming each panel is 0.5m x 0.5m = 0.25m²)
-      const panelSizeM2 = 0.25;
+      const panelSizeM2 = 1;
       updatedRequirements[index].sqm_required = (rows * columns * panelSizeM2).toString();
       
       console.log(`Calculated sqm_required: ${rows} × ${columns} × ${panelSizeM2} = ${updatedRequirements[index].sqm_required}m²`);
@@ -442,7 +442,7 @@ const handleSubmit = async (e) => {
     // Initialize with calculated sqm_required
     const initialRows = 8;
     const initialColumns = 12;
-    const panelSizeM2 = 0.25; // 0.5m x 0.5m panels
+    const panelSizeM2 = 1; // 0.5m x 0.5m panels
     const initialSqm = (initialRows * initialColumns * panelSizeM2).toString();
     
     setScreenRequirements([{ 
