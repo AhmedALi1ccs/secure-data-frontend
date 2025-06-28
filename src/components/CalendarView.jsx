@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
+import OrderDetailsModal from './OrderDetailsModal';
+import PaymentModal from './PaymentModal';
 
 const CalendarView = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -7,10 +9,24 @@ const CalendarView = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [viewMode, setViewMode] = useState('month');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     loadCalendarData();
+    loadCurrentUser();
   }, [currentDate, viewMode]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const response = await apiService.getCurrentUser();
+      setCurrentUser(response.user);
+    } catch (error) {
+      console.error('Failed to load current user:', error);
+    }
+  };
 
   const loadCalendarData = async () => {
   setLoading(true);
@@ -36,7 +52,6 @@ const CalendarView = () => {
   per_page: 100
 });
 
-
     setOrders(response.orders || []);
   } catch (error) {
     console.error('Failed to load calendar data:', error);
@@ -44,7 +59,6 @@ const CalendarView = () => {
     setLoading(false);
   }
 };
-
 
   const navigateDate = (direction) => {
     const newDate = new Date(currentDate);
@@ -79,6 +93,59 @@ const CalendarView = () => {
   };
 
   const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR' }).format(value || 0);
+
+  // Admin-only functions
+  const handleViewOrder = async (orderId) => {
+    if (!isAdmin()) return;
+    
+    try {
+      const response = await apiService.getOrder(orderId);
+      setSelectedOrder(response.order);
+      setShowOrderDetails(true);
+    } catch (err) {
+      alert('Failed to load order details: ' + err.message);
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!isAdmin()) return;
+    
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+    
+    try {
+      await apiService.cancelOrder(orderId);
+      alert('Order cancelled successfully!');
+      loadCalendarData(); // Reload calendar data
+    } catch (err) {
+      alert('Failed to cancel order: ' + err.message);
+    }
+  };
+
+  const handlePaymentUpdate = (order) => {
+    if (!isAdmin()) return;
+    
+    setSelectedOrder(order);
+    setShowPaymentModal(true);
+  };
+
+  const updatePaymentStatus = async (orderId, status, amount) => {
+    try {
+      // 1) increment the payed total
+      await apiService.payOrder(orderId, amount);
+      // 2) update the payment_status
+      await apiService.updateOrder(orderId, { payment_status: status });
+      alert('Payment updated successfully!');
+      setShowPaymentModal(false);
+      loadCalendarData(); // Reload calendar data
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update payment: ' + err.message);
+    }
+  };
+
+  const isAdmin = () => {
+    return currentUser?.role === 'admin' || currentUser?.admin === true;
+  };
 
   const renderHeader = () => {
     let label = '';
@@ -154,10 +221,10 @@ const CalendarView = () => {
       <div style={{ padding: '16px', background: '#fff', borderRadius: '8px' }}>
         {ordersToday.length === 0 ? <p>No orders today.</p> : (
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {ordersToday.map((order, i) => (
+            {ordersToday.map((orderEvent, i) => (
               <li key={i} style={{ marginBottom: '12px' }}>
-                <strong>{order.order_id}</strong> – {order.location_name}<br />
-                {formatCurrency(order.total_amount)} – {order.order_status}
+                <strong>{orderEvent.order.order_id}</strong> – {orderEvent.order.location_name}<br />
+                {formatCurrency(orderEvent.order.total_amount)} – {orderEvent.order.order_status}
               </li>
             ))}
           </ul>
@@ -208,6 +275,29 @@ const CalendarView = () => {
   );
 };
 
+  // Helper function to render installer/disassembler information
+  const renderPersonnelInfo = (order, type) => {
+    const personnelField = type === 'installation' ? 'installing_assignee' : 'disassemble_assignee';
+    const personnel = order[personnelField];
+    
+    if (!personnel) {
+      return (
+        <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>
+          No {type === 'installation' ? 'installer' : 'disassembler'} assigned
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ fontSize: '12px', color: '#374151', marginTop: '4px' }}>
+        <strong>{type === 'installation' ? 'Installer:' : 'Disassembler:'}</strong>
+        <div style={{ marginLeft: '8px' }}>
+          <div>{personnel.name}</div>
+          <div style={{ fontSize: '11px', color: '#6b7280' }}>ID: {personnel.id}</div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="dashboard-container">
@@ -229,26 +319,166 @@ const CalendarView = () => {
         </div>
 
         {selectedDate && (
-          <div className="card" style={{ marginTop: '24px' }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <h3>{selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</h3>
-              <button onClick={() => setSelectedDate(null)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+  <div className="card" style={{ marginTop: '24px' }}>
+    <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <h3>{selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</h3>
+      <button onClick={() => setSelectedDate(null)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+    </div>
+    <div className="card-content">
+      {getOrdersForDate(selectedDate).length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {getOrdersForDate(selectedDate).map(({ order, type }, idx) => (
+            <div key={idx} style={{ 
+              padding: '16px', 
+              border: '1px solid #e5e7eb', 
+              borderRadius: '8px',
+              borderLeft: `4px solid ${type === 'installation' ? '#10b981' : '#f59e0b'}`
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <div>
+                  <strong style={{ fontSize: '16px' }}>{order.order_id}</strong>
+                  <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '2px' }}>
+                    {order.location_name}
+                  </div>
+                </div>
+                <div style={{ 
+                  fontSize: '12px', 
+                  padding: '4px 8px', 
+                  borderRadius: '4px',
+                  background: type === 'installation' ? '#d1fae5' : '#fef9c3',
+                  color: type === 'installation' ? '#065f46' : '#92400e',
+                  fontWeight: '500'
+                }}>
+                  {type === 'installation' ? 'Installation' : 'Disassembly'}
+                </div>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '14px', color: '#374151' }}>
+                    <strong>Amount:</strong> {formatCurrency(order.total_amount)}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
+                    <strong>Status:</strong> {order.order_status}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
+                    <strong>Payment:</strong> {order.payment_status}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '14px', color: '#374151' }}>
+                    <strong>Start Date:</strong> {new Date(order.start_date).toLocaleDateString()}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
+                    <strong>End Date:</strong> {new Date(order.end_date).toLocaleDateString()}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
+                    <strong>Duration:</strong> {order.duration_days} days
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ 
+                borderTop: '1px solid #f3f4f6', 
+                paddingTop: '12px',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '16px'
+              }}>
+                {renderPersonnelInfo(order, 'installation')}
+                {renderPersonnelInfo(order, 'disassemble')}
+              </div>
+
+              {/* Admin Action Buttons */}
+              {isAdmin() && (
+                <div style={{ 
+                  borderTop: '1px solid #f3f4f6', 
+                  paddingTop: '12px',
+                  marginTop: '12px',
+                  display: 'flex',
+                  gap: '8px',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button
+                    onClick={() => handleViewOrder(order.id)}
+                    style={{
+                      background: '#3b82f6', 
+                      color: 'white', 
+                      border: 'none',
+                      padding: '8px 16px', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    📋 View Details
+                  </button>
+                  <button
+                    onClick={() => handlePaymentUpdate(order)}
+                    style={{
+                      background: '#10b981', 
+                      color: 'white', 
+                      border: 'none',
+                      padding: '8px 16px', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    💰 Payment
+                  </button>
+                  {order.order_status === 'confirmed' && (
+                    <button
+                      onClick={() => handleCancelOrder(order.id)}
+                      style={{
+                        background: '#ef4444', 
+                        color: 'white', 
+                        border: 'none',
+                        padding: '8px 16px', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      ❌ Cancel
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="card-content">
-              {getOrdersForDate(selectedDate).length > 0 ? (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {getOrdersForDate(selectedDate).map((order, idx) => (
-                    <li key={idx} style={{ marginBottom: '12px' }}>
-                      <strong>{order.order_id}</strong> – {order.location_name}<br />
-                      {formatCurrency(order.total_amount)} – {order.order_status}
-                    </li>
-                  ))}
-                </ul>
-              ) : <p>No orders on this day.</p>}
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
+      ) : <p>No orders on this day.</p>}
+    </div>
+  </div>
+)}
+
       </div>
+
+      {/* Admin-only Modals */}
+      {isAdmin() && (
+        <>
+          <OrderDetailsModal
+            isOpen={showOrderDetails}
+            order={selectedOrder}
+            onClose={() => setShowOrderDetails(false)}
+            onEdit={(order) => {
+              // Handle edit if needed - you can implement this based on your requirements
+              console.log('Edit order:', order);
+            }}
+          />
+
+          <PaymentModal
+            isOpen={showPaymentModal}
+            order={selectedOrder}
+            onClose={() => setShowPaymentModal(false)}
+            onUpdate={updatePaymentStatus}
+          />
+        </>
+      )}
     </div>
   );
 };
