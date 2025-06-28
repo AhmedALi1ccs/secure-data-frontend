@@ -13,35 +13,38 @@ const CalendarView = () => {
   }, [currentDate, viewMode]);
 
   const loadCalendarData = async () => {
-    setLoading(true);
-    try {
-      let startDate, endDate;
-      if (viewMode === 'month') {
-        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-      } else if (viewMode === 'week') {
-        const startOfWeek = new Date(currentDate);
-        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-        startDate = new Date(startOfWeek);
-        endDate = new Date(startOfWeek);
-        endDate.setDate(startOfWeek.getDate() + 6);
-      } else {
-        startDate = new Date(currentDate);
-        endDate = new Date(currentDate);
-      }
-
-      const response = await apiService.getOrders({
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
-        per_page: 100
-      });
-      setOrders(response.orders || []);
-    } catch (error) {
-      console.error('Failed to load calendar data:', error);
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    let startDate, endDate;
+    if (viewMode === 'month') {
+      startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    } else if (viewMode === 'week') {
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+      startDate = new Date(startOfWeek);
+      endDate = new Date(startOfWeek);
+      endDate.setDate(startOfWeek.getDate() + 6);
+    } else {
+      startDate = new Date(currentDate);
+      endDate = new Date(currentDate);
     }
-  };
+
+    const response = await apiService.getOrders({
+  start_date: startDate.toISOString().split('T')[0],
+  end_date: endDate.toISOString().split('T')[0],
+  per_page: 100
+});
+
+
+    setOrders(response.orders || []);
+  } catch (error) {
+    console.error('Failed to load calendar data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const navigateDate = (direction) => {
     const newDate = new Date(currentDate);
@@ -58,10 +61,20 @@ const CalendarView = () => {
   const isToday = (date) => new Date().toDateString() === date.toDateString();
 
   const getOrdersForDate = (date) => {
-    return orders.filter(order => {
-      const start = new Date(order.start_date);
-      const end = new Date(order.end_date);
-      return date >= start && date <= end;
+      const dateStr = date.toLocaleDateString('en-CA');
+      return orders.flatMap(order => {
+        const events = [];
+        const orderStart = new Date(order.start_date).toISOString().split('T')[0];
+        const orderEnd = new Date(order.end_date).toISOString().split('T')[0];
+
+        if (orderStart === dateStr) {
+          events.push({ type: 'installation', order });
+        }
+        if (orderEnd === dateStr) {
+          events.push({ type: 'disassemble', order });
+        }
+
+        return events;
     });
   };
 
@@ -154,25 +167,47 @@ const CalendarView = () => {
   };
 
   const renderDayCell = (date) => {
-    const ordersForDate = getOrdersForDate(date);
-    return (
-      <div
-        onClick={() => setSelectedDate(date)}
-        style={{
-          padding: '8px',
-          cursor: 'pointer',
-          background: selectedDate?.toDateString() === date.toDateString() ? '#fef3c7' : isToday(date) ? '#dbeafe' : 'white',
-          borderLeft: isToday(date) ? '4px solid #3b82f6' : 'none'
-        }}
-      >
-        <div style={{ fontSize: '14px', fontWeight: isToday(date) ? 'bold' : '500', marginBottom: '4px', color: isToday(date) ? '#1d4ed8' : '#1f2937' }}>{date.getDate()}</div>
-        {ordersForDate.slice(0, 2).map((o, i) => (
-          <div key={i} style={{ fontSize: '10px', padding: '2px 4px', marginBottom: '2px', borderRadius: '3px', background: '#dbeafe', color: '#1d4ed8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.order_id}</div>
-        ))}
-        {ordersForDate.length > 2 && <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: '500' }}>+{ordersForDate.length - 2} more</div>}
+  const orderEvents = getOrdersForDate(date);
+  return (
+    <div
+      onClick={() => setSelectedDate(date)}
+      style={{
+        padding: '8px',
+        cursor: 'pointer',
+        background: selectedDate?.toDateString() === date.toDateString() ? '#fef3c7' : isToday(date) ? '#dbeafe' : 'white',
+        borderLeft: isToday(date) ? '4px solid #3b82f6' : 'none'
+      }}
+    >
+      <div style={{ fontSize: '14px', fontWeight: isToday(date) ? 'bold' : '500', marginBottom: '4px', color: isToday(date) ? '#1d4ed8' : '#1f2937' }}>
+        {date.getDate()}
       </div>
-    );
-  };
+      {orderEvents.slice(0, 2).map(({ type, order }, i) => (
+        <div
+          key={i}
+          style={{
+            fontSize: '10px',
+            padding: '2px 4px',
+            marginBottom: '2px',
+            borderRadius: '3px',
+            background: type === 'installation' ? '#d1fae5' : '#fef9c3',
+            color: type === 'installation' ? '#065f46' : '#92400e',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
+          {order.order_id} {type === 'installation' ? '(Install)' : '(Disassemble)'}
+        </div>
+      ))}
+      {orderEvents.length > 2 && (
+        <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: '500' }}>
+          +{orderEvents.length - 2} more
+        </div>
+      )}
+    </div>
+  );
+};
+
 
   return (
     <div className="dashboard-container">
