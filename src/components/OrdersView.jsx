@@ -20,6 +20,7 @@ const OrdersView = () => {
     start_date: '',
     end_date: '',
     q: '',
+    active: '',
     page: 1,
     per_page: 20
   });
@@ -273,6 +274,19 @@ const OrdersView = () => {
                   onChange={(e) => handleFilterChange('q', e.target.value)}
                 />
               </div>
+              <div className="form-group">
+              <label className="form-label">Active Only:</label>
+              <select
+                className="form-input"
+                value={filters.active}
+                onChange={(e) => handleFilterChange('active', e.target.value)}
+              >
+                <option value="">All Orders</option>
+                <option value="true">Active Orders</option>
+                <option value="false">Inactive Orders</option>
+              </select>
+            </div>
+
               <div className="form-group">
                 <label className="form-label">Order Status:</label>
                 <select
