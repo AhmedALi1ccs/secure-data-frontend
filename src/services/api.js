@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // const API_BASE_URL = 'http://localhost:3000/api/v1';
- const API_BASE_URL= 'https://lobster-app-dolxs.ondigitalocean.app/api/v1'
+const API_BASE_URL= 'https://lobster-app-dolxs.ondigitalocean.app/api/v1'
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -190,7 +190,26 @@ resetUserPassword: async (id) => {
     const response = await api.post('/companies', { company: companyData });
     return response.data;
   },
+  updateCompany: async (companyId, companyData) => {
+  const response = await api.put(`/companies/${companyId}`, { company: companyData });
+  return response.data;
+},
 
+getCompany: async (companyId) => {
+  const response = await api.get(`/companies/${companyId}`);
+  return response.data;
+},
+
+
+deleteCompany: async (companyId) => {
+  const response = await api.delete(`/companies/${companyId}`);
+  return response.data;
+},
+
+getCompanyStats: async () => {
+  const response = await api.get('/companies/stats');
+  return response.data;
+},
   // Screen Inventory endpoints
   getScreenInventory: async (filters = {}) => {
     const response = await api.get('/screen_inventory', { params: filters });

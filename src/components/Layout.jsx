@@ -14,6 +14,7 @@ const Layout = ({ children, currentView, onViewChange }) => {
     { id: 'inventory', name: 'Inventory', icon: '📦', description: 'Screen Availability' },
     { id: 'orders',    name: 'Orders',    icon: '📋', description: 'Order Management' },
     { id: 'finance',   name: 'Finance',   icon: '💰', description: 'Revenue & Expenses' },
+    { id: 'thirdcompanies',   name: 'Third party companies',   icon: '💻', description: 'Third party companies' },
     { id: 'users',     name: 'Users',     icon: '👥', description: 'User Management' },
   ];
    const menuItems = user?.role === 'user'

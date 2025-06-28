@@ -9,7 +9,7 @@ import InventoryView from './components/InventoryView';
 import OrdersView from './components/OrdersView';
 import UserManagementView from './components/UserManagementView';
 import { useEffect } from 'react';
-
+import ThirdCompanies from './components/ThirdCompanies';
 const MainApp = () => {
   const { user, loading } = useAuth();
   const { view }          = useParams();               // grabs "calendar", "inventory", etc.
@@ -43,6 +43,8 @@ const MainApp = () => {
             </div>
           </div>
         );
+         case 'thirdcompanies':
+          return <ThirdCompanies />;
         case 'users':
           return <UserManagementView />;
       default:
