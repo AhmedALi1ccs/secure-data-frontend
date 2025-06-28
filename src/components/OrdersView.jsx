@@ -357,9 +357,18 @@ const OrdersView = () => {
         {formatDate(order.start_date)} – {formatDate(order.end_date)} •
         {order.total_sqm || 0} m² • {formatCurrency(order.total_amount)}
       </p>
-      <p style={{ fontSize: '12px', color: '#6b7280' }}>
-        Installer: {order.installing_assignee?.name}
-      </p>
+      
+      {/* Personnel Information */}
+      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <span>
+            <strong style={{ color: '#065f46' }}>Installer:</strong> {order.installing_assignee?.name || 'Not assigned'}
+          </span>
+          <span>
+            <strong style={{ color: '#92400e' }}>Disassembler:</strong> {order.disassemble_assignee?.name || 'Not assigned'}
+          </span>
+        </div>
+      </div>
 
       {/* status & payment pills */}
       <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
@@ -380,7 +389,6 @@ const OrdersView = () => {
           fontWeight: '500'
         }}>
          {(order.payment_status ?? 'not_received').replace('_',' ').toUpperCase()}
-
         </span>
       </div>
     </div>
@@ -423,7 +431,6 @@ const OrdersView = () => {
     </div>
   </div>
 ))}
-
 
                 </div>
 
@@ -513,7 +520,7 @@ const OrdersView = () => {
   isOpen={showPaymentModal}
    order={selectedOrder}
  onClose={() => setShowPaymentModal(false)}
- onUpdate={updatePaymentStatus}up to your existing update fn
+ onUpdate={updatePaymentStatus}
 />
     </div>
   );
