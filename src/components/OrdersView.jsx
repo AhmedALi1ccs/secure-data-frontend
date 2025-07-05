@@ -238,9 +238,9 @@ const OrdersView = () => {
     }
   });
 
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+  const utf8WithBom = new Blob(["\uFEFF" + content], { type: 'text/plain;charset=utf-8' });
   const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(utf8WithBom);
   link.setAttribute('href', url);
   link.setAttribute('download', `orders_${new Date().toISOString().split('T')[0]}.txt`);
   document.body.appendChild(link);
