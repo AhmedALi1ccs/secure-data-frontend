@@ -1,4 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
+import { calculateScreenTotals } from '../utils/screenTotals';
+import { formatOrderAsArabicTxt } from '../utils/exportOrderTxt';
 const OrderDetailsModal = ({ isOpen, order, onClose, onEdit }) => {
 const { user, logout } = useAuth();
       const isViewer = () => user?.role === 'viewer'
@@ -43,23 +45,60 @@ const { user, logout } = useAuth();
   .reduce((sum, p) => sum + (p.amount || 0), 0);
   const remaining = (order.total_amount || 0) - paidAmount;
 
-  // Calculate totals from screen requirements
-  const calculateScreenTotals = () => {
-    if (!order.screen_requirements) return { totalPanels: 0, totalSqm: 0, configurations: 0 };
-    
-    const totalPanels = order.screen_requirements.reduce((sum, req) => sum + (req.total_panels || 0), 0);
-    const totalSqm = order.screen_requirements.reduce((sum, req) => sum + parseFloat(req.sqm_required || 0), 0);
-    const configurations = order.screen_requirements.length;
-    
-    return { totalPanels, totalSqm, configurations };
-  };
 
-  const screenTotals = calculateScreenTotals();
+  const screenTotals = calculateScreenTotals(order);
+  const exportOrderAsTxt = () => {
+  try {
+    const today = new Date().toLocaleDateString('ar-EG', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const content = `السلام عليكم\n\nالتاريخ: ${today}\n\n${formatOrderAsArabicTxt(order)}`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute(
+      'download',
+      `${order.order_id || 'order'}_details.txt`
+    );
+
+    // Required for Firefox
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 0);
+  } catch (err) {
+    console.error('Failed to export TXT file:', err);
+    alert('❌ Failed to export file.');
+  }
+};
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '1000px', maxHeight: '90vh', overflow: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <button
+  onClick={exportOrderAsTxt}
+  style={{
+    background: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    padding: '6px 12px',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  }}
+>
+  📤 Export TXT
+</button>
+
   <h3 style={{ margin: 0 }}>Order Details - {order.order_id}</h3>
   <div style={{ display: 'flex', gap: '12px' }}>
     {!isViewer() && (
@@ -183,7 +222,7 @@ const { user, logout } = useAuth();
         </div>
 
         {/* Screen Configurations - DETAILED */}
-        {order.screen_requirements && order.screen_requirements.length > 0 && (
+        {order.order_screen_requirements && order.order_screen_requirements.length > 0 && (
           <div style={{ marginBottom: '24px', padding: '20px', background: '#f0fff4', borderRadius: '8px' }}>
             <h4 style={{ margin: '0 0 16px 0', color: '#374151' }}>
               📺 Screen Configurations ({screenTotals.configurations})
@@ -201,7 +240,7 @@ const { user, logout } = useAuth();
             }}>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
-                  {screenTotals.configurations}
+                  {order.order_screen_requirements.length}
                 </p>
                 <p style={{ margin: '0', fontSize: '12px', color: '#6b7280' }}>Screen Types</p>
               </div>
@@ -220,7 +259,7 @@ const { user, logout } = useAuth();
             </div>
             
             {/* Detailed Configurations */}
-            {order.screen_requirements.map((req, index) => (
+            {order.order_screen_requirements.map((req, index) => (
               <div key={req.id} style={{ 
                 marginBottom: '16px', 
                 padding: '16px', 

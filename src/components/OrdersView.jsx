@@ -3,6 +3,8 @@ import { apiService } from '../services/api';
 import CreateOrderModal from './CreateOrderModal';
 import OrderDetailsModal from './OrderDetailsModal';
 import PaymentModal from './PaymentModal';
+import { calculateScreenTotals } from '../utils/screenTotals';
+import { formatOrderAsArabicTxt } from '../utils/exportOrderTxt';
 
 const OrdersView = () => {
   const [orders, setOrders] = useState([]);
@@ -13,7 +15,7 @@ const OrdersView = () => {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
-
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     payment_status: '',
@@ -42,6 +44,17 @@ const OrdersView = () => {
   useEffect(() => {
     loadOrders();
   }, [filters]);
+
+  useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (!e.target.closest('.export-dropdown')) {
+      setShowExportDropdown(false);
+    }
+  };
+
+  document.addEventListener('click', handleClickOutside);
+  return () => document.removeEventListener('click', handleClickOutside);
+}, []);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -76,7 +89,7 @@ const OrdersView = () => {
     setShowCreateOrder(false);
     loadOrders();
   };
-
+  
   const handleViewOrder = async (orderId) => {
     try {
       const response = await apiService.getOrder(orderId);
@@ -154,30 +167,47 @@ const OrdersView = () => {
   const exportOrders = () => {
     const csvData = [];
     
-    csvData.push([
-      'Order ID', 'Location', 'Start Date', 'End Date', 'Duration (Days)',
-      'Total SQM', 'Amount (SAR)', 'Order Status', 'Payment Status',
-      'Installing Assignee', 'Disassemble Assignee', 'Created Date'
-    ]);
+      csvData.push([
+        'Order ID', 'Location', 'google_maps_link', 'Start Date', 'End Date', 'Duration (Days)',
+        'Total SQM', 'Total Amount (SAR)', 'Payed (SAR)', 'Remaining (SAR)',
+        'Order Status', 'Payment Status',
+        'Installing Assignee', 'Disassemble Assignee', 'Created Date'
+
+      ]);
+
 
     orders.forEach(order => {
-      csvData.push([
-        order.order_id,
-        order.location_name,
-        formatDate(order.start_date),
-        formatDate(order.end_date),
-        order.duration_days,
-        order.total_sqm,
-        order.total_amount,
-        order.order_status,
-        order.payment_status.replace('_', ' '),
-        order.installing_assignee?.name || '',
-        order.disassemble_assignee?.name || '',
-        formatDate(order.created_at)
-      ]);
-    });
+    csvData.push([
+      order.order_id,
+      order.location_name,
+      order.google_maps_link|| '',
+      formatDate(order.start_date),
+      formatDate(order.end_date),
+      order.duration_days,
+      calculateScreenTotals(order).totalSqm.toFixed(2),
+      order.total_amount,
+      order.payed,
+      order.remaining,
+      order.order_status,
+      order.payment_status?.replace('_', ' '),
+      order.installing_assignee?.name || '',
+      order.disassemble_assignee?.name || '',
+      formatDate(order.created_at)
+    ]);
+  });
 
-    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    
+    
+
+    const csvContent = csvData.map(row =>
+      row.map(field => {
+        const cell = String(field ?? '');
+        return cell.includes(',') || cell.includes('"') || cell.includes('\n')
+          ? `"${cell.replace(/"/g, '""')}"`
+          : cell;
+      }).join(',')
+    ).join('\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -188,19 +218,35 @@ const OrdersView = () => {
     link.click();
     document.body.removeChild(link);
   };
+  const exportOrdersAsTxt = () => {
+  const today = new Date();
+  const dateFormatter = new Intl.DateTimeFormat('ar-EG', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
-  if (loading && orders.length === 0) {
-    return (
-      <div className="dashboard-container">
-        <div className="main-content">
-          <div className="welcome-section">
-            <h2>Loading Orders...</h2>
-            <p>Please wait while we load your order data.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  let content = `السلام عليكم\n\n`;
+  content += `التاريخ: ${dateFormatter.format(today)}\n\n`;
+
+  orders.forEach(order => {
+    try {
+      content += `${formatOrderAsArabicTxt(order)}\n\n`;
+    } catch (e) {
+      console.error('Failed to format order for export:', order.order_id, e);
+    }
+  });
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `orders_${new Date().toISOString().split('T')[0]}.txt`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
   return (
     <div className="dashboard-container">
@@ -219,13 +265,82 @@ const OrdersView = () => {
               >
                 📋 Create New Order
               </button>
-              <button 
-                onClick={exportOrders}
-                className="action-button secondary"
-                style={{ marginBottom: '0' }}
-              >
-                📊 Export CSV
-              </button>
+              <div className="export-dropdown" style={{ position: 'relative' }}>
+  <button
+    className="action-button primary"
+    style={{
+      minWidth: '200px',
+      justifyContent: 'center',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      marginBottom: 0
+    }}
+    onClick={() => setShowExportDropdown(prev => !prev)}
+  >
+    📨 Export ▼
+  </button>
+
+  {showExportDropdown && (
+    <div
+      style={{
+        position: 'absolute',
+        top: '110%',
+        right: 0,
+        background: 'white',
+        borderRadius: '8px',
+        boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.15)',
+        overflow: 'hidden',
+        zIndex: 1000,
+        minWidth: '180px'
+      }}
+    >
+      <div
+        onClick={() => {
+          exportOrders();
+          setShowExportDropdown(false);
+        }}
+        style={{
+          padding: '12px 16px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '14px',
+          borderBottom: '1px solid #eee',
+          background: '#fff',
+          color: '#111'
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
+      >
+        📊 Export as CSV
+      </div>
+      <div
+        onClick={() => {
+          exportOrdersAsTxt();
+          setShowExportDropdown(false);
+        }}
+        style={{
+          padding: '12px 16px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '14px',
+          background: '#fff',
+          color: '#111'
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
+      >
+        📝 Export as TXT (Arabic)
+      </div>
+    </div>
+  )}
+</div>
+
+
             </div>
           </div>
         </div>
@@ -355,7 +470,7 @@ const OrdersView = () => {
       <h4>{order.order_id} – {order.location_name}</h4>
       <p>
         {formatDate(order.start_date)} – {formatDate(order.end_date)} •
-        {order.total_sqm || 0} m² • {formatCurrency(order.total_amount)}
+        {calculateScreenTotals(order).totalSqm.toFixed(2)} m² • {formatCurrency(order.total_amount)}
       </p>
       
       {/* Personnel Information */}
@@ -493,6 +608,7 @@ const OrdersView = () => {
           </div>
         </div>
       </div>
+      
 
       {/* Modals */}
       <CreateOrderModal
@@ -505,6 +621,7 @@ const OrdersView = () => {
      setShowCreateOrder(false);
      setEditingOrder(null);
      loadOrders();
+     setFilters({ ...filters, q: '', page: 1 });
    }}
   initialData={editingOrder} 
   isEditMode={Boolean(editingOrder)} 
