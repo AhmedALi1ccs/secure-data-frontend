@@ -1,7 +1,7 @@
-import React from 'react';
-
+import { useAuth } from '../contexts/AuthContext';
 const OrderDetailsModal = ({ isOpen, order, onClose, onEdit }) => {
-
+const { user, logout } = useAuth();
+      const isViewer = () => user?.role === 'viewer'
   if (!isOpen || !order) return null;
 
   const formatDate = (dateString) => {
@@ -12,6 +12,8 @@ const OrderDetailsModal = ({ isOpen, order, onClose, onEdit }) => {
       day: 'numeric'
     });
   };
+  
+
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', { 
@@ -60,6 +62,7 @@ const OrderDetailsModal = ({ isOpen, order, onClose, onEdit }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
   <h3 style={{ margin: 0 }}>Order Details - {order.order_id}</h3>
   <div style={{ display: 'flex', gap: '12px' }}>
+    {!isViewer() && (
     <button
       onClick={() => onEdit(order)}  // Add this callback
       style={{
@@ -73,6 +76,7 @@ const OrderDetailsModal = ({ isOpen, order, onClose, onEdit }) => {
     >
       ✏️ Edit
     </button>
+    )}
     <button
       onClick={onClose}
       style={{

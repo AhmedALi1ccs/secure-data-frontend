@@ -16,7 +16,7 @@ const MainApp = () => {
   const navigate         = useNavigate();
   const currentView       = view || 'dashboard';      
   useEffect(() => {
-    if (user?.role === 'user' && view !== 'calendar') {
+    if (user?.role === 'user' || user?.role === 'viewer' && view !== 'calendar') {
       navigate('/calendar', { replace: true });
     }
   }, [user, view, navigate]);

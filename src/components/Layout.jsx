@@ -17,7 +17,7 @@ const Layout = ({ children, currentView, onViewChange }) => {
     { id: 'thirdcompanies',   name: 'Third party companies',   icon: '💻', description: 'Third party companies' },
     { id: 'users',     name: 'Users',     icon: '👥', description: 'User Management' },
   ];
-   const menuItems = user?.role === 'user'
+   const menuItems = user?.role === 'user' || user?.role === 'viewer'
    ? allMenu.filter(item => item.id === 'calendar')
    : allMenu;
 
