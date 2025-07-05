@@ -33,7 +33,9 @@ const CreateOrderModal = ({ isOpen, onClose, onSuccess, initialData, isEditMode 
   const [equipmentAvailability, setEquipmentAvailability] = useState({});
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState([]);
-  
+  const [manualTotalEnabled, setManualTotalEnabled] = useState(false);
+  const [manualTotalAmount, setManualTotalAmount] = useState('');
+
   // Notification state
   const [notification, setNotification] = useState({
     isOpen: false,
@@ -349,7 +351,10 @@ const handleSubmit = async (e) => {
 
   try {
     const totalSqm    = validScreenRequirements.reduce((sum, r) => sum + parseFloat(r.sqm_required||0), 0);
-    const totalAmount = totalSqm * (parseFloat(formData.price_per_sqm) || 0);
+    const totalAmount = manualTotalEnabled
+    ? parseFloat(manualTotalAmount) || 0
+    : totalSqm * (parseFloat(formData.price_per_sqm) || 0);
+
 
     const orderData = {
       order: {
@@ -813,19 +818,51 @@ const handleSubmit = async (e) => {
             {/* Pricing */}
             <div style={{ marginBottom: '24px', padding: '16px', background: '#fffbeb', borderRadius: '8px' }}>
               <h4 style={{ margin: '0 0 16px 0', color: '#374151' }}>💰 Pricing Information</h4>
-              
-              <div className="form-group">
-                <label className="form-label">Price per Square Meter (SAR) *</label>
-                <input
-                  type="number"
-                  className="form-input"
-                  value={formData.price_per_sqm}
-                  onChange={(e) => handleInputChange('price_per_sqm', parseFloat(e.target.value) || 0)}
-                  min="0"
-                  step="0.01"
-                  required
-                />
+              <div className="form-group" style={{ marginTop: '12px' }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={manualTotalEnabled}
+                    onChange={(e) => {
+                      setManualTotalEnabled(e.target.checked);
+                      if (!e.target.checked) setManualTotalAmount('');
+                    }}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Bulk amount
+                </label>
               </div>
+
+              {manualTotalEnabled && (
+                <div className="form-group">
+                  <label className="form-label">Order Total Amount (SAR)</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={manualTotalAmount}
+                    onChange={(e) => setManualTotalAmount(e.target.value)}
+                    placeholder="Enter total order amount"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              )}
+
+            {!manualTotalEnabled && (
+            <div className="form-group">
+              <label className="form-label">Price per Square Meter (SAR) *</label>
+              <input
+                type="number"
+                className="form-input"
+                value={formData.price_per_sqm}
+                onChange={(e) => handleInputChange('price_per_sqm', parseFloat(e.target.value) || 0)}
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+          )}
+
 
               <div className="form-group">
                 <label className="form-label">Additional Notes</label>
@@ -860,9 +897,13 @@ const handleSubmit = async (e) => {
                 <p style={{ margin: '4px 0', color: '#6b7280' }}>
                   Equipment: <strong>{formData.laptops_needed} laptop(s), {formData.video_processors_needed} processor(s)</strong>
                 </p>
-                <p style={{ margin: '12px 0 0 0', fontSize: '18px', fontWeight: 'bold', color: '#1f2937' }}>
-                  Total Amount: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR' }).format(getTotalAmount())}
+                <p>
+                  Total Amount: 
+                  <strong>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR' }).format(
+                    manualTotalEnabled ? manualTotalAmount : getTotalAmount()
+                  )}</strong>
                 </p>
+
               </div>
             </div>
 
