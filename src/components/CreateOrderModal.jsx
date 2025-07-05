@@ -333,18 +333,26 @@ const validateForm = () => {
   }
 
   setErrors(newErrors);
-  return { isValid: newErrors.length === 0, validScreenRequirements };
+  return { isValid: newErrors.length === 0, validScreenRequirements, newErrors };
+
 };
 
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  const { isValid, validScreenRequirements } = validateForm();
+  const { isValid, validScreenRequirements, newErrors } = validateForm();
 
   if (!isValid) {
-    showNotification('error', 'Validation Failed', 'Please fix the following issues:', errors);
+    showNotification(
+      'error',
+      'Validation Failed',
+      'Please fix the following issues:',
+      newErrors
+    );
     return;
   }
+
+
 
   setLoading(true);
   setErrors([]);
