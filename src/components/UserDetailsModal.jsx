@@ -17,21 +17,26 @@ const UserDetailsModal = ({ isOpen, user, onClose, onUpdate }) => {
       last_name: user.last_name,
       email: user.email,
       role: user.role,
-      is_active: user.is_active
+      is_active: user.is_active,
+      contract_type: user.contract_type || 'PAG'
     });
     setEditMode(true);
   };
 
   const handleSave = async () => {
   try {
-    await apiService.updateUser(user.id, editData);
+    const response = await apiService.updateUser(user.id, editData);
     setEditMode(false);
-    onUpdate && onUpdate(); // this probably refetches the user list or details
+
+    if (onUpdate) {
+      onUpdate(response.user); // ✅ pass updated user back
+    }
   } catch (err) {
     console.error('Failed to update user:', err);
     alert('Failed to update user. Please try again.');
   }
 };
+
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
@@ -116,6 +121,15 @@ const UserDetailsModal = ({ isOpen, user, onClose, onUpdate }) => {
           </div>
           <h4 style={{ margin: '0 0 8px 0', fontSize: '20px' }}>{user.full_name}</h4>
           <p style={{ margin: '0 0 12px 0', color: '#6b7280' }}>{user.email}</p>
+          {user.contract_type && (
+          <div style={{ marginTop: '12px' }}>
+            <span style={{ fontSize: '12px', color: '#6b7280' }}>Contract Type:</span>
+            <p style={{ margin: '2px 0', fontWeight: '500' }}>
+              {user.contract_type === 'PAG' ? 'Pay As You Go' : 'Long-Term'}
+            </p>
+          </div>
+        )}
+
           
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
             <span style={{
@@ -190,6 +204,20 @@ const UserDetailsModal = ({ isOpen, user, onClose, onUpdate }) => {
                       <option value="viewer">Viewer</option>
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label className="form-label">Contract Type:</label>
+                    <select
+                      className="form-input"
+                      value={editData.contract_type}
+                      onChange={(e) =>
+                        setEditData((prev) => ({ ...prev, contract_type: e.target.value }))
+                      }
+                    >
+                      <option value="PAG">Pay As You Go</option>
+                      <option value="LT">Long-Term</option>
+                    </select>
+                  </div>
+
                   
                   <div className="form-group">
                     <label style={{ display: 'flex', alignItems: 'center', fontSize: '14px' }}>

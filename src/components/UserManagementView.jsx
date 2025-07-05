@@ -447,7 +447,11 @@ const UserManagementView = () => {
         isOpen={showUserDetails}
         user={selectedUser}
         onClose={() => setShowUserDetails(false)}
-        onUpdate={loadUsers}
+        onUpdate={(updatedUser) => {
+        setSelectedUser(updatedUser);
+        loadUsers(); 
+      }}
+
       />
     </div>
   );
