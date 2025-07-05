@@ -416,18 +416,24 @@ const OrdersView = () => {
         Payment
       </button>
 
-      {order.order_status === 'confirmed' && (
-        <button
-          onClick={() => handleCancelOrder(order.id)}
-          style={{
-            background: '#ef4444', color: 'white', border: 'none',
-            padding: '6px 12px', borderRadius: '4px', cursor: 'pointer',
-            fontSize: '12px'
-          }}
-        >
-          Cancel
-        </button>
-      )}
+    {order.order_status === 'confirmed' && 
+  (new Date(order.start_date) - new Date()) / (1000 * 60 * 60 * 24) >= -7 && (
+  <button
+    onClick={() => handleCancelOrder(order.id)}
+    style={{
+      background: '#ef4444',
+      color: 'white',
+      border: 'none',
+      padding: '6px 12px',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '12px'
+    }}
+  >
+    Cancel
+  </button>
+)}
+
     </div>
   </div>
 ))}
