@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-
+import { apiService } from '../services/api';
 const UserDetailsModal = ({ isOpen, user, onClose, onUpdate }) => {
   const { user: currentUser } = useAuth();
   const [editMode, setEditMode] = useState(false);
@@ -23,11 +23,15 @@ const UserDetailsModal = ({ isOpen, user, onClose, onUpdate }) => {
   };
 
   const handleSave = async () => {
-    // This would call the API to update the user
-    // For now, just close edit mode
+  try {
+    await apiService.updateUser(user.id, editData);
     setEditMode(false);
-    onUpdate && onUpdate();
-  };
+    onUpdate && onUpdate(); // this probably refetches the user list or details
+  } catch (err) {
+    console.error('Failed to update user:', err);
+    alert('Failed to update user. Please try again.');
+  }
+};
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
