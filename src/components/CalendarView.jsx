@@ -14,10 +14,15 @@ const CalendarView = () => {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  useEffect(() => {
+ useEffect(() => {
+  loadCurrentUser();
+}, []);
+
+useEffect(() => {
+  if (currentUser) {
     loadCalendarData();
-    loadCurrentUser();
-  }, [currentDate, viewMode]);
+  }
+}, [currentUser, currentDate, viewMode]);
 
   const loadCurrentUser = async () => {
     try {
@@ -29,6 +34,11 @@ const CalendarView = () => {
   };
 
   const loadCalendarData = async () => {
+  if (!currentUser) {
+    console.log("❌ No current user yet.");
+    return;
+  }
+
   setLoading(true);
   try {
     let startDate, endDate;
@@ -46,19 +56,29 @@ const CalendarView = () => {
       endDate = new Date(currentDate);
     }
 
-    const response = await apiService.getOrders({
-  start_date: startDate.toISOString().split('T')[0],
-  end_date: endDate.toISOString().split('T')[0],
-  per_page: 100
-});
+    const params = {
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
+      per_page: 100,
+    };
 
+    if (!isAdmin()) {
+      params.user_id = currentUser.id;
+    }
+
+    console.log("📡 Sending params to backend:", params);
+
+    const response = await apiService.getOrders(params);
+    console.log("📥 Response from backend:", response);
     setOrders(response.orders || []);
   } catch (error) {
-    console.error('Failed to load calendar data:', error);
+    console.error('❌ Failed to load calendar data:', error);
   } finally {
     setLoading(false);
   }
 };
+
+
 
   const navigateDate = (direction) => {
     const newDate = new Date(currentDate);
