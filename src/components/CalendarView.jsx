@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
 import OrderDetailsModal from './OrderDetailsModal';
 import PaymentModal from './PaymentModal';
+import CreateOrderModal from './CreateOrderModal';
+
 
 const CalendarView = () => {
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [showCreateOrder, setShowCreateOrder] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -249,12 +253,13 @@ useEffect(() => {
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {ordersToday.map((orderEvent, i) => (
               <li key={i} style={{ marginBottom: '12px' }}>
-                <strong>{orderEvent.order.order_id}</strong> – {orderEvent.order.location_name}<br />
+                <strong>{orderEvent.order.location_name}</strong> – {orderEvent.order.order_id}<br />
                 {formatCurrency(orderEvent.order.total_amount)} – {orderEvent.order.order_status}
               </li>
             ))}
           </ul>
         )}
+        
       </div>
     );
   };
@@ -362,9 +367,9 @@ useEffect(() => {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                 <div>
-                  <strong style={{ fontSize: '16px' }}>{order.order_id}</strong>
+                  <strong style={{ fontSize: '16px' }}>{order.location_name}</strong>
                   <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '2px' }}>
-                    {order.location_name}
+                    {order.order_id}
                   </div>
                 </div>
                 <div style={{ 
@@ -381,9 +386,11 @@ useEffect(() => {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
                 <div>
+                  {(isViewer() || isAdmin()) &&(
                   <div style={{ fontSize: '14px', color: '#374151' }}>
                     <strong>Amount:</strong> {formatCurrency(order.total_amount)}
                   </div>
+                  )}
                   <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
                     <strong>Status:</strong> {order.order_status}
                   </div>
@@ -492,17 +499,32 @@ useEffect(() => {
 
       </div>
       {/* Admin-only Modals */}
-      {(isAdmin() || isViewer()) && (
         <>
           <OrderDetailsModal
             isOpen={showOrderDetails}
             order={selectedOrder}
             onClose={() => setShowOrderDetails(false)}
-            onEdit={(order) => {
-              // Handle edit if needed - you can implement this based on your requirements
-              console.log('Edit order:', order);
-            }}
+             onEdit={(order) => {
+          setEditingOrder(order);
+          setShowOrderDetails(false);
+          setShowCreateOrder(true); 
+  }}
           />
+          <CreateOrderModal
+  isOpen={showCreateOrder}
+  onClose={() => {
+    setShowCreateOrder(false);
+    setEditingOrder(null);
+  }}
+  onSuccess={() => {
+    setShowCreateOrder(false);
+    setEditingOrder(null);
+    loadCalendarData(); // Refresh orders
+  }}
+  initialData={editingOrder}
+  isEditMode={Boolean(editingOrder)}
+/>
+
 
           <PaymentModal
             isOpen={showPaymentModal}
@@ -511,7 +533,7 @@ useEffect(() => {
             onUpdate={updatePaymentStatus}
           />
         </>
-      )}
+
     </div>
   );
 };
