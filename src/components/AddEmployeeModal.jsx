@@ -9,7 +9,8 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }) => {
     phone: '',
     role: 'user', // System role (admin or user)
     job_role: 'technician', // Job role (technician, manager, etc.)
-    hourly_rate: ''
+    hourly_rate: '',
+    contract_type: 'PAG'
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -32,7 +33,8 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }) => {
       phone: '',
       role: 'user',
       job_role: 'technician',
-      hourly_rate: ''
+      hourly_rate: '',
+      contract_type: 'PAG'
     });
     setErrors([]);
     setGeneratedPassword('');
@@ -90,14 +92,10 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       const response = await apiService.createUser({
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.role,
-        job_role: formData.job_role,
+         ...formData,
         hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null
       });
+      
       
       setGeneratedPassword(response.temporary_password);
       setShowSuccess(true);
@@ -352,6 +350,18 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }) => {
               <small style={{ color: '#6b7280' }}>Optional - can be set later</small>
             </div>
           </div>
+          <div className="form-group">
+            <label className="form-label">Contract Type</label>
+            <select
+              className="form-input"
+              value={formData.contract_type}
+              onChange={(e) => handleInputChange('contract_type', e.target.value)}
+            >
+              <option value="PAG">Pay As You Go</option>
+              <option value="LT">Long-Term</option>
+            </select>
+          </div>
+
 
           {/* Account Creation Notice */}
           <div style={{ 
