@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import CreateOrderModal from '../components/CreateOrderModal';
 import { useNavigate } from 'react-router-dom';
+import { calculateScreenTotals } from '../utils/screenTotals';
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState({
@@ -286,7 +287,7 @@ const Dashboard = () => {
                           {formatDate(order.start_date)} - {formatDate(order.end_date)}
                         </p>
                         <p>
-                          {order.total_sqm || 0} m² • {formatCurrency(order.total_amount || 0)}
+                          {calculateScreenTotals(order).totalSqm.toFixed(2) || 0} m² • {formatCurrency(order.total_amount || 0)}
                         </p>
                         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                           <span style={getStatusColor(order.order_status)}>
