@@ -74,8 +74,8 @@ useEffect(() => {
     console.log("📡 Sending params to backend:", params);
 
     const response = await apiService.getOrders(params);
-    console.log("📥 Response from backend:", response);
-    setOrders(response.orders || []);
+    const filtered = (response.orders || []).filter(order => order.order_status !== 'cancelled');
+    setOrders(filtered);
   } catch (error) {
     console.error('❌ Failed to load calendar data:', error);
   } finally {
@@ -294,7 +294,20 @@ useEffect(() => {
             textOverflow: 'ellipsis'
           }}
         >
-          {order.order_id} {type === 'installation' ? '(Install)' : '(Disassemble)'}
+          <>
+  {order.order_id} {type === 'installation' ? '(Install)' : '(Disassemble)'}
+  {order.google_maps_link && (
+    <a
+      href={order.google_maps_link}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ display: 'block', fontSize: '10px', color: '#3b82f6' }}
+    >
+      📍 View on Map
+    </a>
+  )}
+</>
+
         </div>
       ))}
       {orderEvents.length > 2 && (
@@ -383,6 +396,19 @@ useEffect(() => {
                   {type === 'installation' ? 'Installation' : 'Disassembly'}
                 </div>
               </div>
+                {order.google_maps_link && (
+                  <div style={{ marginTop: '3px' ,marginBottom: '6px' }}>
+                    <a
+                      href={order.google_maps_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '13px', color: '#3b82f6' }}
+                    >
+                      📍 View Location on Google Maps
+                    </a>
+                  </div>
+                )}
+
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
                 <div>
