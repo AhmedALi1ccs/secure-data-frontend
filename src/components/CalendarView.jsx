@@ -416,7 +416,13 @@ useEffect(() => {
                   <div style={{ fontSize: '14px', color: '#374151' }}>
                     <strong>Amount:</strong> {formatCurrency(order.total_amount)}
                   </div>
-                  )}
+                  )} 
+                 {order.third_party_provider && (
+                  <div style={{ fontSize: '14px', color: '#374151' }}>
+                    <strong>Third Party:</strong> {order.third_party_provider.name}
+                  </div>
+                )}
+
                   <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
                     <strong>Status:</strong> {order.order_status}
                   </div>
