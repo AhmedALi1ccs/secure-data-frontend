@@ -62,7 +62,8 @@ useEffect(() => {
       per_page: 100,
     };
 
-    if (!isAdmin()) {
+
+    if (!isAdmin() && !isViewer()) {
       params.user_id = currentUser.id;
     }
 
@@ -114,9 +115,10 @@ useEffect(() => {
 
   const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR' }).format(value || 0);
 
+
   // Admin-only functions
   const handleViewOrder = async (orderId) => {
-    if (!isAdmin()) return;
+     if (!isAdmin() && !isViewer()) return;
     
     try {
       const response = await apiService.getOrder(orderId);
@@ -166,6 +168,10 @@ useEffect(() => {
   const isAdmin = () => {
     return currentUser?.role === 'admin' || currentUser?.admin === true;
   };
+  const isViewer = () => {
+  return currentUser?.role === 'viewer';
+};
+
 
   const renderHeader = () => {
     let label = '';
@@ -410,64 +416,72 @@ useEffect(() => {
               </div>
 
               {/* Admin Action Buttons */}
-              {isAdmin() && (
-                <div style={{ 
-                  borderTop: '1px solid #f3f4f6', 
-                  paddingTop: '12px',
-                  marginTop: '12px',
-                  display: 'flex',
-                  gap: '8px',
-                  justifyContent: 'flex-end'
-                }}>
-                  <button
-                    onClick={() => handleViewOrder(order.id)}
-                    style={{
-                      background: '#3b82f6', 
-                      color: 'white', 
-                      border: 'none',
-                      padding: '8px 16px', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '500'
-                    }}
-                  >
-                    📋 View Details
-                  </button>
-                  <button
-                    onClick={() => handlePaymentUpdate(order)}
-                    style={{
-                      background: '#10b981', 
-                      color: 'white', 
-                      border: 'none',
-                      padding: '8px 16px', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '500'
-                    }}
-                  >
-                    💰 Payment
-                  </button>
-                  {order.order_status === 'confirmed' && (
-                    <button
-                      onClick={() => handleCancelOrder(order.id)}
-                      style={{
-                        background: '#ef4444', 
-                        color: 'white', 
-                        border: 'none',
-                        padding: '8px 16px', 
-                        borderRadius: '6px', 
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '500'
-                      }}
-                    >
-                      ❌ Cancel
-                    </button>
-                  )}
-                </div>
-              )}
+              <div style={{
+  borderTop: '1px solid #f3f4f6',
+  paddingTop: '12px',
+  marginTop: '12px',
+  display: 'flex',
+  gap: '8px',
+  justifyContent: 'flex-end'
+}}>
+  {(isAdmin() || isViewer()) && (
+    <button
+      onClick={() => handleViewOrder(order.id)}
+      style={{
+        background: '#3b82f6',
+        color: 'white',
+        border: 'none',
+        padding: '8px 16px',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '12px',
+        fontWeight: '500'
+      }}
+    >
+      📋 View Details
+    </button>
+  )}
+
+  {isAdmin() && (
+    <>
+      <button
+        onClick={() => handlePaymentUpdate(order)}
+        style={{
+          background: '#10b981',
+          color: 'white',
+          border: 'none',
+          padding: '8px 16px',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontSize: '12px',
+          fontWeight: '500'
+        }}
+      >
+        💰 Payment
+      </button>
+
+      {order.order_status === 'confirmed' && (
+        <button
+          onClick={() => handleCancelOrder(order.id)}
+          style={{
+            background: '#ef4444',
+            color: 'white',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: '500'
+          }}
+        >
+          ❌ Cancel
+        </button>
+      )}
+    </>
+  )}
+</div>
+
+
             </div>
           ))}
         </div>
@@ -477,9 +491,8 @@ useEffect(() => {
 )}
 
       </div>
-
       {/* Admin-only Modals */}
-      {isAdmin() && (
+      {(isAdmin() || isViewer()) && (
         <>
           <OrderDetailsModal
             isOpen={showOrderDetails}
