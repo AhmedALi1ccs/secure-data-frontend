@@ -639,7 +639,6 @@ const exportInstallThenDisassembleTxt = () => {
       </button>
 
     {order.order_status === 'confirmed' && 
-  (new Date(order.start_date) - new Date()) / (1000 * 60 * 60 * 24) >= -7 && (
   <button
     onClick={() => handleCancelOrder(order.id)}
     style={{
@@ -654,7 +653,7 @@ const exportInstallThenDisassembleTxt = () => {
   >
     Cancel
   </button>
-)}
+}
 
     </div>
   </div>
