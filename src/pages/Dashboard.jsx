@@ -40,7 +40,8 @@ const Dashboard = () => {
       setStats(ordersResponse.stats || stats);
 
       try {
-        const equipmentResponse = await apiService.getEquipmentAvailability();
+        const today = new Date().toISOString().split('T')[0];
+        const equipmentResponse = await apiService.getEquipmentAvailabilityForDates(today, today);
         console.log('Equipment response:', equipmentResponse);
         setEquipmentStatus(equipmentResponse);
       } catch (equipError) {
@@ -252,14 +253,14 @@ const Dashboard = () => {
             <div className="stat-card">
               <h3>Laptops</h3>
               <div className="value">
-                {equipmentStatus.laptops?.available || 0} / {equipmentStatus.laptops?.total || 0}
+                {equipmentStatus.availability?.laptops?.available || 0} / {equipmentStatus.availability?.laptops?.total || 0}
               </div>
               <small style={{ color: '#6b7280' }}>Available / Total</small>
             </div>
             <div className="stat-card">
               <h3>Video Processors</h3>
               <div className="value">
-                {equipmentStatus.video_processors?.available || 0} / {equipmentStatus.video_processors?.total || 0}
+                {equipmentStatus.availability?.video_processors?.available || 0} / {equipmentStatus.availability?.video_processors?.total || 0}
               </div>
               <small style={{ color: '#6b7280' }}>Available / Total</small>
             </div>
