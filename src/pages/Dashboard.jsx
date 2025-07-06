@@ -4,6 +4,7 @@ import { apiService } from '../services/api';
 import CreateOrderModal from '../components/CreateOrderModal';
 import { useNavigate } from 'react-router-dom';
 import { calculateScreenTotals } from '../utils/screenTotals';
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState({
@@ -14,10 +15,13 @@ const Dashboard = () => {
   });
   const [orders, setOrders] = useState([]);
   const [equipmentStatus, setEquipmentStatus] = useState(null);
+  const [financialSummary, setFinancialSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateOrder, setShowCreateOrder] = useState(false);
-   const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
+  const navigate = useNavigate();
+
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -41,6 +45,17 @@ const Dashboard = () => {
         setEquipmentStatus(equipmentResponse);
       } catch (equipError) {
         console.log('Equipment endpoint not available:', equipError.message);
+      }
+
+      // Load financial data for admin users
+      if (user?.role === 'admin') {
+        try {
+          const financialResponse = await apiService.getFinancialDashboardSummary();
+          setFinancialSummary(financialResponse);
+          setNotifications(financialResponse.notifications || []);
+        } catch (financialError) {
+          console.log('Financial data not available:', financialError.message);
+        }
       }
 
     } catch (error) {
@@ -82,13 +97,21 @@ const Dashboard = () => {
     switch (status) {
       case 'confirmed': 
         return { color: '#3b82f6', background: '#dbeafe', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' };
-      
       case 'pending': 
         return { color: '#6b7280', background: '#f3f4f6', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' };
       case 'cancelled': 
         return { color: '#ef4444', background: '#fee2e2', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' };
       default: 
         return { color: '#6b7280', background: '#f3f4f6', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' };
+    }
+  };
+
+  const getNotificationColor = (type) => {
+    switch (type) {
+      case 'success': return '#10b981';
+      case 'warning': return '#f59e0b';
+      case 'error': return '#ef4444';
+      default: return '#6b7280';
     }
   };
 
@@ -176,6 +199,34 @@ const Dashboard = () => {
           <p>Manage your LED screen rental orders and track your business performance.</p>
         </div>
 
+        {/* Financial Notifications (Admin Only) */}
+        {user?.role === 'admin' && notifications.length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            {notifications.map((notification, index) => (
+              <div 
+                key={index}
+                style={{ 
+                  borderLeft: `4px solid ${getNotificationColor(notification.type)}`,
+                  background: notification.type === 'success' ? '#f0fdf4' : 
+                             notification.type === 'warning' ? '#fffbeb' : '#fef2f2',
+                  padding: '12px 16px',
+                  marginBottom: '8px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <span style={{ marginRight: '8px', fontSize: '16px' }}>
+                  {notification.icon}
+                </span>
+                <span style={{ color: '#374151', fontWeight: '500' }}>
+                  {notification.message}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Main Statistics */}
         <div className="stats-grid">
           <div className="stat-card">
@@ -196,7 +247,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Equipment Status (if available) */}
+        {/* Equipment & Financial Status */}
         {equipmentStatus && (
           <div className="stats-grid" style={{ marginTop: '20px' }}>
             <div className="stat-card">
@@ -213,35 +264,109 @@ const Dashboard = () => {
               </div>
               <small style={{ color: '#6b7280' }}>Available / Total</small>
             </div>
-            <div className="stat-card">
-              <h3>Equipment Ready</h3>
-              <div 
-                className="value" 
-                style={{ 
-                  color: equipmentStatus.can_fulfill_order ? '#10b981' : '#ef4444',
-                  fontSize: '18px'
-                }}
-              >
-                {equipmentStatus.can_fulfill_order ? '✅ Ready' : '❌ Limited'}
-              </div>
-            </div>
-            <div className="stat-card">
-              <h3>Refresh Data</h3>
-              <button 
-                onClick={loadDashboardData}
-                style={{
-                  background: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                🔄 Reload
-              </button>
-            </div>
+            
+            {/* Financial Data for Admin */}
+            {user?.role === 'admin' && financialSummary ? (
+              <>
+                <div className="stat-card">
+                  <h3>💰 Net Income</h3>
+                  <div 
+                    className="value" 
+                    style={{ 
+                      color: (financialSummary.current_month_summary?.gross_earnings - financialSummary.current_month_summary?.total_expenses) >= 0 ? '#10b981' : '#ef4444',
+                      fontSize: '18px'
+                    }}
+                  >
+                    {formatCurrency(
+                      (financialSummary.current_month_summary?.gross_earnings || 0) - 
+                      (financialSummary.current_month_summary?.total_expenses || 0)
+                    )}
+                  </div>
+                  <small style={{ color: '#6b7280' }}>This month</small>
+                </div>
+                <div className="stat-card">
+                  <h3>💳 Outstanding</h3>
+                  <div className="value">
+                    {formatCurrency(financialSummary.accounts_receivable?.total_amount)}
+                  </div>
+                  <small style={{ color: '#6b7280' }}>
+                    {financialSummary.accounts_receivable?.orders_count} unpaid orders
+                  </small>
+                </div>
+              </>
+            ) : (
+              // For non-admin users or when financial data unavailable
+              <>
+                <div className="stat-card">
+                  <h3>📊 Analytics</h3>
+                  <button 
+                    onClick={() => navigate('/orders')}
+                    style={{
+                      background: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    View Reports
+                  </button>
+                </div>
+                <div className="stat-card">
+                  <h3>🔄 Refresh</h3>
+                  <button 
+                    onClick={loadDashboardData}
+                    style={{
+                      background: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Reload Data
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Accounts Receivable Alert (Admin Only) */}
+        {user?.role === 'admin' && financialSummary?.accounts_receivable?.overdue?.count > 0 && (
+          <div style={{ 
+            marginTop: '16px', 
+            padding: '16px', 
+            background: '#fef2f2', 
+            borderRadius: '8px',
+            border: '1px solid #fecaca'
+          }}>
+            <h4 style={{ margin: '0 0 8px 0', color: '#dc2626' }}>⚠️ Overdue Invoices</h4>
+            <p style={{ margin: '0', color: '#7f1d1d' }}>
+              {financialSummary.accounts_receivable.overdue.count} orders overdue totaling{' '}
+              {formatCurrency(financialSummary.accounts_receivable.overdue.amount)}
+            </p>
+          </div>
+        )}
+
+        {/* Upcoming Revenue (Admin Only) */}
+        {user?.role === 'admin' && financialSummary?.gross_expectations?.upcoming_count > 0 && (
+          <div style={{ 
+            marginTop: '16px', 
+            padding: '16px', 
+            background: '#f0fdf4', 
+            borderRadius: '8px',
+            border: '1px solid #bbf7d0'
+          }}>
+            <h4 style={{ margin: '0 0 8px 0', color: '#059669' }}>📈 Upcoming Revenue</h4>
+            <p style={{ margin: '0', color: '#065f46' }}>
+              {financialSummary.gross_expectations.upcoming_count} confirmed orders will generate{' '}
+              {formatCurrency(financialSummary.gross_expectations.upcoming_revenue)}
+            </p>
           </div>
         )}
 
@@ -258,13 +383,14 @@ const Dashboard = () => {
               >
                 📋 Create New Order
               </button>
-              <button className="action-button secondary"  onClick={() => navigate('/orders')}>
-                
+              <button className="action-button secondary" onClick={() => navigate('/orders')}>
                 📊 View All Orders
               </button>
-              <button className="action-button secondary" onClick={() => navigate('/finance')}>
-                💰 Finance Report
-              </button>
+              {user?.role === 'admin' && (
+                <button className="action-button secondary" onClick={() => navigate('/finance')}>
+                  💰 Financial Overview
+                </button>
+              )}
               <button className="action-button secondary" onClick={() => navigate('/inventory')}>
                 🔧 Equipment Status
               </button>

@@ -169,7 +169,7 @@ const OrdersView = () => {
     
       csvData.push([
         'Order ID', 'Location', 'google_maps_link', 'Start Date', 'End Date', 'Duration (Days)',
-        'Total SQM', 'Total Amount (SAR)', 'Payed (SAR)', 'Remaining (SAR)',
+        'Total SQM', 'Total Amount (SAR)', 'paid (SAR)', 'Remaining (SAR)',
         'Order Status', 'Payment Status',
         'Installing Assignee', 'Disassemble Assignee', 'Created Date'
 

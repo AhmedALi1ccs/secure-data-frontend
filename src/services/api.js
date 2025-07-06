@@ -95,6 +95,11 @@ getCurrentUser: async () => {
     const response = await api.get('/auth/me');
     return response.data;
   },
+  deleteUser: async (id) => {
+  const response = await api.delete(`/users/${id}`);
+  return response.data;
+},
+
 
   changePassword: async (passwordData) => {
     const response = await api.patch('/auth/change_password', { password_change: passwordData });
@@ -139,7 +144,283 @@ resetUserPassword: async (id) => {
   const response = await api.patch(`/users/${id}/reset_password`);
   return response.data;
 },
+// Add these methods to your existing apiService object in api.js
 
+// Enhanced Expenses Methods
+updateExpense: async (id, expenseData) => {
+  const response = await api.put(`/expenses/${id}`, { expense: expenseData });
+  return response.data;
+},
+
+deleteExpense: async (id) => {
+  const response = await api.delete(`/expenses/${id}`);
+  return response.data;
+},
+
+// Recurring Expenses Methods  
+updateRecurringExpense: async (id, expenseData) => {
+  const response = await api.put(`/recurring_expenses/${id}`, {
+    recurring_expense: expenseData
+  });
+  return response.data;
+},
+
+deleteRecurringExpense: async (id) => {
+  const response = await api.delete(`/recurring_expenses/${id}`);
+  return response.data;
+},
+
+generateRecurringExpenses: async (recurringExpenseId, month, year) => {
+  const response = await api.post(`/recurring_expenses/${recurringExpenseId}/generate_expenses`, {
+    month, year
+  });
+  return response.data;
+},
+
+// Equipment Maintenance Methods
+createEquipmentMaintenance: async (equipmentId, maintenanceData) => {
+  const response = await api.post(
+    `/equipment/${equipmentId}/maintenances`,
+    { equipment_maintenance: maintenanceData }
+  );
+  return response.data;
+},
+
+// Enhanced Finance Methods
+getAccountsReceivable: async (filters = {}) => {
+  const response = await api.get('/finance/accounts_receivable', { params: filters });
+  return response.data;
+},
+
+getCashFlow: async (startDate, endDate) => {
+  const response = await api.get('/finance/cash_flow', {
+    params: { start_date: startDate, end_date: endDate }
+  });
+  return response.data;
+},
+
+getExpenseAnalytics: async (month, year) => {
+  const response = await api.get('/finance/expense_analytics', {
+    params: { month, year }
+  });
+  return response.data;
+},
+
+// Order Payment Methods
+getOrderPayments: async (orderId) => {
+  const response = await api.get(`/orders/${orderId}/payments`);
+  return response.data;
+},
+
+createOrderPayment: async (orderId, paymentData) => {
+  const response = await api.post(`/orders/${orderId}/payments`, {
+    payment: paymentData
+  });
+  return response.data;
+},
+
+// Monthly Targets Enhanced
+updateMonthlyTarget: async (id, targetData) => {
+  const response = await api.put(`/monthly_targets/${id}`, {
+    monthly_target: targetData
+  });
+  return response.data;
+},
+
+deleteMonthlyTarget: async (id) => {
+  const response = await api.delete(`/monthly_targets/${id}`);
+  return response.data;
+},
+
+getCurrentMonthTarget: async () => {
+  const response = await api.get('/monthly_targets/current_month');
+  return response.data;
+},
+
+// Financial Reports
+getDetailedFinancialReport: async (startDate, endDate, includeBreakdown = true) => {
+  const response = await api.get('/finance/detailed_report', {
+    params: { 
+      start_date: startDate, 
+      end_date: endDate,
+      include_breakdown: includeBreakdown
+    }
+  });
+  return response.data;
+},
+
+exportProfitSharingReport: async (month, year) => {
+  const response = await api.get('/finance/export_profit_sharing', {
+    params: { month, year },
+    responseType: 'text'
+  });
+  return response.data;
+},
+
+// Budget Planning
+getBudgetComparison: async (year) => {
+  const response = await api.get('/finance/budget_comparison', {
+    params: { year }
+  });
+  return response.data;
+},
+
+// Tax and Compliance
+getTaxSummary: async (year) => {
+  const response = await api.get('/finance/tax_summary', {
+    params: { year }
+  });
+  return response.data;
+},
+
+// Advanced Analytics
+getRevenueProjection: async (months = 6) => {
+  const response = await api.get('/finance/revenue_projection', {
+    params: { months }
+  });
+  return response.data;
+},
+
+getExpenseTrends: async (months = 12) => {
+  const response = await api.get('/finance/expense_trends', {
+    params: { months }
+  });
+  return response.data;
+},
+
+getProfitabilityAnalysis: async (startDate, endDate) => {
+  const response = await api.get('/finance/profitability_analysis', {
+    params: { start_date: startDate, end_date: endDate }
+  });
+  return response.data;
+},
+
+// Client Financial Analysis
+getClientFinancialSummary: async (filters = {}) => {
+  const response = await api.get('/finance/client_summary', { params: filters });
+  return response.data;
+},
+
+// Financial Settings
+getFinancialSettings: async () => {
+  const response = await api.get('/finance/settings');
+  return response.data;
+},
+
+updateFinancialSettings: async (settingsData) => {
+  const response = await api.patch('/finance/settings', {
+    financial_setting: settingsData
+  });
+  return response.data;
+},
+
+// Cost Center Analysis
+getCostCenterAnalysis: async (month, year) => {
+  const response = await api.get('/finance/cost_center_analysis', {
+    params: { month, year }
+  });
+  return response.data;
+},
+
+// Equipment ROI
+getEquipmentROI: async () => {
+  const response = await api.get('/finance/equipment_roi');
+  return response.data;
+},
+
+// Financial Health Metrics
+getFinancialHealthMetrics: async () => {
+  const response = await api.get('/finance/health_metrics');
+  return response.data;
+},
+
+// Financial Dashboard
+getFinancialDashboardSummary: async () => {
+  const response = await api.get('/finance/dashboard_summary');
+  return response.data;
+},
+
+getFinancialOverview: async (month, year) => {
+  return await api.get(`/finance/overview`, {
+    params: { month, year }
+  }).then(res => res.data);
+}
+,
+
+getRevenueBreakdown: async (month, year) => {
+  const response = await api.get('/finance/revenue_breakdown', {
+    params: { month, year }
+  });
+  return response.data;
+},
+
+exportFinancialReport: async (startDate, endDate) => {
+  const response = await api.get('/finance/export_financial_report', {
+    params: { start_date: startDate, end_date: endDate },
+    responseType: 'blob'  // 👈 this is crucial
+  });
+  return response.data;
+}
+,
+// Monthly Targets
+getMonthlyTargets: async (year) => {
+  const response = await api.get('/monthly_targets', { params: { year } });
+  return response.data;
+},
+
+setMonthlyTarget: async (month, year, targetData) => {
+  const response = await api.post('/finance/set_monthly_target', {
+    month, year, monthly_target: targetData
+  });
+  return response.data;
+},
+
+getRecurringExpenses: async (filters = {}) => {
+  const response = await api.get('/recurring_expenses', { params: filters });
+  return response.data;
+},
+
+createRecurringExpense: async (expenseData) => {
+  const response = await api.post('/recurring_expenses', {
+    recurring_expense: expenseData
+  });
+  return response.data;
+},
+
+generateAllRecurringExpenses: async (month, year) => {
+  const response = await api.post('/recurring_expenses/generate_all_for_month', {
+    month, year
+  });
+  return response.data;
+},
+
+// Enhanced Expenses
+approveExpense: async (id) => {
+  const response = await api.patch(`/expenses/${id}/approve`);
+  return response.data;
+},
+
+rejectExpense: async (id) => {
+  const response = await api.patch(`/expenses/${id}/reject`);
+  return response.data;
+},
+
+getPendingExpenses: async () => {
+  const response = await api.get('/expenses/pending_approval');
+  return response.data;
+},
+
+// Profit Sharing
+getProfitSharingSettings: async () => {
+  const response = await api.get('/finance/profit_sharing_settings');
+  return response.data;
+},
+
+updateProfitSharingSettings: async (financial_setting) => {
+  return await api.patch(`/finance/profit_sharing_settings`, {
+    financial_setting
+  });
+},
   confirmOrder: async (id) => {
     const response = await api.patch(`/orders/${id}/confirm`);
     return response.data;
@@ -284,10 +565,10 @@ getCompanyStats: async () => {
     return response.data;
   },
 
-  getMonthlyComparison: async () => {
-    const response = await api.get('/finance/monthly_comparison');
-    return response.data;
-  },
+ getMonthlyComparison: async () => {
+  return await api.get(`/finance/monthly_comparison`).then(res => res.data);
+}
+,
 
   // Expenses endpoints
   getExpenses: async (filters = {}) => {

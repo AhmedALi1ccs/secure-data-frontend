@@ -10,6 +10,9 @@ import OrdersView from './components/OrdersView';
 import UserManagementView from './components/UserManagementView';
 import { useEffect } from 'react';
 import ThirdCompanies from './components/ThirdCompanies';
+import FinancialOverview from './components/FinancialOverview';
+import ExpensesView from './components/ExpensesView';
+
 const MainApp = () => {
   const { user, loading } = useAuth();
   const { view }          = useParams();               // grabs "calendar", "inventory", etc.
@@ -32,17 +35,11 @@ const MainApp = () => {
         return <InventoryView />;
       case 'orders':
         return <OrdersView />;
-      case 'finance':
-        return (
-          <div className="p-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-              <div className="text-4xl mb-4">💰</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Finance & Reports</h2>
-              <p className="text-gray-600 mb-4">Detailed financial reporting interface coming soon!</p>
-              <p className="text-sm text-gray-500">For now, use the Dashboard to view basic revenue statistics.</p>
-            </div>
-          </div>
-        );
+        case 'finance':
+          return <FinancialOverview />;
+
+        case 'expenses':
+          return <ExpensesView />;
          case 'thirdcompanies':
           return <ThirdCompanies />;
         case 'users':
