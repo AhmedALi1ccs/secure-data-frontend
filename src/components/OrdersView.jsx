@@ -632,11 +632,20 @@ const OrdersView = () => {
         isOpen={showOrderDetails}
         order={selectedOrder}
         onClose={() => setShowOrderDetails(false)}
-        onEdit={(order) => {
-          setEditingOrder(order);
-          setShowOrderDetails(false);
-          setShowCreateOrder(true); 
-  }}
+        onEdit={async (order) => {
+  try {
+    const fullOrderData = await apiService.getOrder(order.id);
+    console.log('🟢 Full edit data:', fullOrderData);
+
+    setEditingOrder(fullOrderData); // contains: order, screen_requirements, equipment
+    setShowOrderDetails(false);
+    setShowCreateOrder(true);
+  } catch (err) {
+    console.error('❌ Failed to fetch full order for editing:', err);
+    alert('Could not load order for editing');
+  }
+}}
+
       />
 
   <PaymentModal

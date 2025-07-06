@@ -129,7 +129,8 @@ const checkEquipmentAvailability = async () => {
 
 useEffect(() => {
   if (isOpen && initialData) {
-    const order = initialData;
+    const order = initialData.order;
+
 
     setFormData({
       google_maps_link: order.google_maps_link || '',
@@ -153,19 +154,23 @@ useEffect(() => {
       video_processors_needed: order.video_processors_needed || 1
     });
 
-    setScreenRequirements(
-      (order.screen_requirements || []).map(req => ({
-        screen_inventory_id: req.screen_inventory_id,
-        sqm_required: req.sqm_required?.toString() || '',
-        dimensions_rows: req.dimensions_rows,
-        dimensions_columns: req.dimensions_columns
-      }))
-    );
+   setScreenRequirements(
+  (initialData.screen_requirements || []).map(req => ({
+    screen_inventory_id: req.screen_inventory_id,
+    sqm_required: req.sqm_required?.toString() || '',
+    dimensions_rows: req.dimensions_rows,
+    dimensions_columns: req.dimensions_columns
+  }))
+);
+
   } else if (isOpen && !initialData) {
     resetForm(); // For create mode
   }
 }, [isOpen, initialData]);
 
+useEffect(() => {
+  console.log('🔍 screenRequirements updated:', screenRequirements);
+}, [screenRequirements]);
 
 useEffect(() => {
   if (formData.start_date && formData.end_date) {
