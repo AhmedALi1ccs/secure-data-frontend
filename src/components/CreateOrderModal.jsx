@@ -4,6 +4,7 @@ import NotificationModal from './NotificationModal';
 
 const CreateOrderModal = ({ isOpen, onClose, onSuccess, initialData, isEditMode }) => {
   const [formData, setFormData] = useState({
+     id: '',
     google_maps_link: '',
     location_name: '',
     start_date: '',
@@ -133,6 +134,7 @@ useEffect(() => {
 
 
     setFormData({
+      id: order.id || '',
       google_maps_link: order.google_maps_link || '',
       location_name: order.location_name || '',
       start_date: order.start_date
@@ -395,7 +397,7 @@ const handleSubmit = async (e) => {
 
     console.log('Submitting order:', orderData);
     const response = isEditMode
-      ? await apiService.updateOrder(initialData.id, orderData.order)
+      ? await apiService.updateOrder(formData.id, orderData.order)
       : await apiService.createOrder(orderData);
 
 

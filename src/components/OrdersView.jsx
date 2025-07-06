@@ -24,7 +24,8 @@ const OrdersView = () => {
     q: '',
     active: '',
     page: 1,
-    per_page: 20
+    per_page: 20,
+    due_filter: ''
   });
   
   const [pagination, setPagination] = useState({
@@ -248,6 +249,77 @@ const OrdersView = () => {
   document.body.removeChild(link);
 };
 
+const exportInstallThenDisassembleTxt = () => {
+  const today = new Date();
+  const arabicDate = new Intl.DateTimeFormat('ar-EG', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(today);
+
+  const formatArabicDate = (dateStr) => {
+    return new Intl.DateTimeFormat('ar-EG', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(new Date(dateStr));
+  };
+
+  let content = `السلام عليكم\n\nالتاريخ: ${arabicDate}\n\n`;
+
+  // === تركيب phase ===
+  content += `تشغيلات التركيب\n\n`;
+
+  orders.forEach((order) => {
+    const screenReqs = order.order_screen_requirements || [];
+
+    const screensText = screenReqs.map((req) => {
+      return `• النوع: ${req.screen_type}, المساحة: ${req.sqm_required} متر, التكوين: ${req.dimensions_rows} × ${req.dimensions_columns}`;
+    }).join('\n');
+
+    const location = order.location_name || 'غير محدد';
+    const link = order.google_maps_link || order.url || null;
+
+    content += `📦 الطلب: ${order.order_id} (${location})\n`;
+    content += `📍 الموقع: ${location}\n`;
+    if (link) content += `🔗 الرابط: ${link}\n`;
+    content += `${screensText}\n`;
+    content += `🗓️ تاريخ التركيب: ${formatArabicDate(order.start_date)}\n`;
+    content += `👷 الفني المسؤول: ${order.installing_assignee?.name || 'غير محدد'}\n\n`;
+  });
+
+  // === فك phase ===
+  content += `تشغيلات الفك\n\n`;
+
+  orders.forEach((order) => {
+    const screenReqs = order.order_screen_requirements || [];
+
+    const screensText = screenReqs.map((req) => {
+      return `• النوع: ${req.screen_type}, المساحة: ${req.sqm_required} متر, التكوين: ${req.dimensions_rows} × ${req.dimensions_columns}`;
+    }).join('\n');
+
+    const location = order.location_name || 'غير محدد';
+    const link = order.google_maps_link || order.url || null;
+
+    content += `📦 الطلب: ${order.order_id} (${location})\n`;
+    content += `📍 الموقع: ${location}\n`;
+    if (link) content += `🔗 الرابط: ${link}\n`;
+    content += `${screensText}\n`;
+    content += `🗓️ تاريخ الفك: ${formatArabicDate(order.end_date)}\n`;
+    content += `👷 الفني المسؤول: ${order.disassemble_assignee?.name || 'غير محدد'}\n\n`;
+  });
+
+  const blob = new Blob(["\uFEFF" + content], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `assemble_then_disassemble_${today.toISOString().split('T')[0]}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
   return (
     <div className="dashboard-container">
       <div className="main-content">
@@ -334,8 +406,30 @@ const OrdersView = () => {
         onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
         onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
       >
-        📝 Export as TXT (Arabic)
+        📝 Export as TXT (order by order)
       </div>
+     <div
+  onClick={() => {
+    exportInstallThenDisassembleTxt();
+    setShowExportDropdown(false);
+  }}
+  style={{
+    padding: '12px 16px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px',
+    background: '#fff',
+    color: '#111'
+  }}
+  onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
+  onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
+>
+  📦 Export as TXT (assemble then disassemble)
+</div>
+
+
     </div>
   )}
 </div>
@@ -414,6 +508,19 @@ const OrdersView = () => {
                   <option value="cancelled">Cancelled</option>
                 </select>
               </div>
+
+            <div className="form-group">
+              <label className="form-label">Due Filter:</label>
+              <select
+                className="form-input"
+                value={filters.due_filter}
+                onChange={(e) => handleFilterChange('due_filter', e.target.value)}
+              >
+                <option value="">All</option>
+                <option value="overdue">Overdue</option>
+                <option value="due_this_week">Due This Week</option>
+              </select>
+            </div>
             </div>
             <div className="form-row">
               <div className="form-group">
