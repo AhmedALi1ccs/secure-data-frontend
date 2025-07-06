@@ -68,8 +68,7 @@ const Dashboard = () => {
 
   const handleOrderCreated = (orderResponse) => {
     console.log('Order created successfully:', orderResponse);
-    alert('Order created successfully! 🎉');
-    loadDashboardData(); // Refresh the dashboard
+    loadDashboardData();
   };
 
   const formatCurrency = (value) => {
