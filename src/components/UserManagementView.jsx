@@ -243,7 +243,7 @@ const UserManagementView = () => {
                     <option value="">All Roles</option>
                     <option value="admin">Administrator</option>
                     <option value="user">Employee</option>
-                    <option value="viewer">Viewer</option>
+                    <option value="viewer">Team Leader</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -294,7 +294,11 @@ const UserManagementView = () => {
                             fontSize: '12px',
                             fontWeight: '500'
                           }}>
-                            {user.role}
+                             {user.role === 'admin'
+                            ? 'admin'
+                            : user.role === 'viewer'
+                            ? 'Team Leader'
+                            : 'Employee'}
                           </span>
                           <span style={{
                             ...getStatusColor(user.is_active),

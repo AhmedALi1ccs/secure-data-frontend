@@ -305,7 +305,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }) => {
                 >
                   <option value="user">Employee</option>
                   <option value="admin">Administrator</option>
-                  <option value="viewer">Viewer Only</option>
+                  <option value="viewer">Team Leader</option>
                 </select>
                 <small style={{ color: '#6b7280' }}>
                   {formData.role === 'admin' && 'Full system access including user management'}
