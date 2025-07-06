@@ -44,7 +44,8 @@ const CreateOrderModal = ({ isOpen, onClose, onSuccess, initialData, isEditMode 
     type: 'info',
     title: '',
     message: '',
-    details: null
+    details: null,
+    onCloseCallback: null
   });
 
   useEffect(() => {
@@ -187,13 +188,24 @@ useEffect(() => {
       type,
       title,
       message,
-      details
+      details,
+      onCloseCallback: null 
     });
   };
 
   const closeNotification = () => {
-    setNotification({ ...notification, isOpen: false });
-  };
+  const callback = notification.onCloseCallback;
+  setNotification({ 
+    ...notification, 
+    isOpen: false, 
+    onCloseCallback: null 
+  });
+  
+  // Execute callback if it exists (for success notifications)
+  if (callback) {
+    callback();
+  }
+};
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -413,11 +425,14 @@ const handleSubmit = async (e) => {
       ]
     );
 
-    setTimeout(() => {
-      onSuccess && onSuccess(response);
-      onClose();
-      resetForm();
-    }, 2000);
+    setNotification(prev => ({
+  ...prev,
+  onCloseCallback: () => {
+    onSuccess && onSuccess(response);
+    onClose();
+    resetForm();
+  }
+  }));
   } catch (error) {
     console.error('Failed to create order:', error);
 
