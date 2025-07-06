@@ -8,6 +8,7 @@ const CreateOrderModal = ({ isOpen, onClose, onSuccess, initialData, isEditMode 
     location_name: '',
     start_date: '',
     end_date: '',
+    due_date: '',
     price_per_sqm: 150,
     notes: '',
     installing_assignee_id: '',
@@ -134,11 +135,15 @@ useEffect(() => {
       google_maps_link: order.google_maps_link || '',
       location_name: order.location_name || '',
       start_date: order.start_date
-      ? new Date(order.start_date).toISOString().split('T')[0]
-      : '',
-    end_date: order.end_date
-      ? new Date(order.end_date).toISOString().split('T')[0]
-     : '',
+        ? new Date(order.start_date).toISOString().split('T')[0]
+        : '',
+      end_date: order.end_date
+          ? new Date(order.end_date).toISOString().split('T')[0]
+        : '',
+      due_date: order.due_date
+        ? new Date(order.due_date).toISOString().split('T')[0]
+        : '',
+
       price_per_sqm: order.price_per_sqm || 0,
       notes: order.notes || '',
       installing_assignee_id: order.installing_assignee?.id || '',
@@ -373,6 +378,7 @@ const handleSubmit = async (e) => {
         video_processors_needed: Number(formData.video_processors_needed),
         price_per_sqm: parseFloat(formData.price_per_sqm),      
         total_amount: totalAmount,
+        due_date: formData.due_date || null 
       },
       screen_requirements: validScreenRequirements.map(req => ({
         screen_inventory_id: Number(req.screen_inventory_id),
@@ -586,6 +592,17 @@ const handleSubmit = async (e) => {
                     required
                   />
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Due Date (for Payment)</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={formData.due_date}
+                    onChange={(e) => handleInputChange('due_date', e.target.value)}
+                    min={formData.end_date || formData.start_date || new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+
               </div>
             </div>
 
