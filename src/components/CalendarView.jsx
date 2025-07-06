@@ -426,9 +426,11 @@ useEffect(() => {
                   <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
                     <strong>Status:</strong> {order.order_status}
                   </div>
+                  {(isViewer() || isAdmin()) &&(
                   <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
                     <strong>Payment:</strong> {order.payment_status}
                   </div>
+                  )}
                 </div>
                 <div>
                   <div style={{ fontSize: '14px', color: '#374151' }}>
