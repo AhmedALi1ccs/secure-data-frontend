@@ -419,7 +419,10 @@ const handleSubmit = async (e) => {
       `Order ${response.order?.order_id || 'ID pending'} has been created and confirmed.`,
       [
         `Location: ${formData.location_name}`,
-        `Total: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR' }).format(getTotalAmount())}`,
+        `Total: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR' }).format(
+            manualTotalEnabled ? manualTotalAmount : getTotalAmount()
+          )}`,
+
         `Equipment: ${formData.laptops_needed} laptop(s), ${formData.video_processors_needed} processor(s)`,
         `Screen Configurations: ${validScreenRequirements.map(req => `${req.dimensions_rows}×${req.dimensions_columns}`).join(', ')}`
       ]
