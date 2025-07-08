@@ -73,7 +73,7 @@ useEffect(() => {
         apiService.getEmployees({ active_only: true }),
         apiService.getCompanies({ active_only: true }),
         apiService.getScreenInventory({ active_only: true }),
-        apiService.getEquipmentAvailability()
+        apiService.getEquipmentAvailabilityForDates()
       ]);
       console.log('screensRes:', screensRes.availability);
       setEmployees(employeesRes.employees || []);
@@ -338,10 +338,10 @@ const validateForm = () => {
       newErrors.push(`Screen ${index + 1}: Dimensions too large (max 50 rows × 100 columns)`);
     }
 
-    const availability = screenAvailability.find(item => item.id === parseInt(req.screen_inventory_id));
-    if (availability && parseFloat(req.sqm_required) > availability.available_sqm) {
+    const availability = screenAvailability.find(item => parseInt(item.id) === parseInt(req.screen_inventory_id));
+    if (availability && parseFloat(req.sqm_required) > availability.max_available_for_period) {
       const screenType = screenInventory.find(s => s.id.toString() === req.screen_inventory_id)?.screen_type;
-      newErrors.push(`${screenType}: Only ${availability.available_sqm}m² available, but ${req.sqm_required}m² requested`);
+      newErrors.push(`${screenType}: Only ${availability.max_available_for_period}m² available, but ${req.sqm_required}m² requested`);
     }
   });
 
@@ -599,7 +599,7 @@ const handleSubmit = async (e) => {
                     className="form-input"
                     value={formData.start_date}
                     onChange={(e) => handleInputChange('start_date', e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
+                    min=""
                     required
                   />
                 </div>
@@ -621,7 +621,6 @@ const handleSubmit = async (e) => {
                     className="form-input"
                     value={formData.due_date}
                     onChange={(e) => handleInputChange('due_date', e.target.value)}
-                    min={formData.end_date || formData.start_date || new Date().toISOString().split('T')[0]}
                   />
                 </div>
 
