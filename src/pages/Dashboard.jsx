@@ -31,10 +31,7 @@ const Dashboard = () => {
     setError(null);
     
     try {
-      console.log('Loading dashboard data...');
-      
-      const ordersResponse = await apiService.getOrders({ per_page: 5 });
-      console.log('Orders response:', ordersResponse);
+
       
       setOrders(ordersResponse.orders || []);
       setStats(ordersResponse.stats || stats);
@@ -42,7 +39,6 @@ const Dashboard = () => {
       try {
         const today = new Date().toISOString().split('T')[0];
         const equipmentResponse = await apiService.getEquipmentAvailabilityForDates(today, today);
-        console.log('Equipment response:', equipmentResponse);
         setEquipmentStatus(equipmentResponse);
       } catch (equipError) {
         console.log('Equipment endpoint not available:', equipError.message);
@@ -68,7 +64,6 @@ const Dashboard = () => {
   };
 
   const handleOrderCreated = (orderResponse) => {
-    console.log('Order created successfully:', orderResponse);
     loadDashboardData();
   };
 
