@@ -887,38 +887,39 @@ const OrdersView = () => {
 
       {/* Modals */}
       <CreateOrderModal
-        isOpen={showCreateOrder}
-        onClose={() => {
-          setShowCreateOrder(false);
-          setEditingOrder(null);           
-        }}
-        onSuccess={() => {
-          setShowCreateOrder(false);
-          setEditingOrder(null);
-          loadOrders();
-          setFilters({ ...filters, q: '', page: 1 });
-        }}
-        initialData={editingOrder} 
-        isEditMode={Boolean(editingOrder)} 
-      />
+      isOpen={showCreateOrder}
+      onClose={() => {
+        setShowCreateOrder(false);
+        setEditingOrder(null);           
+      }}
+      onSuccess={() => {
+        setShowCreateOrder(false);
+        setEditingOrder(null);
+        loadOrders();
+        setFilters({ ...filters, q: '', page: 1 });
+      }}
+      initialData={editingOrder} 
+      isEditMode={Boolean(editingOrder)}
+      editingOrderId={editingOrder?.order?.id}
+    />
 
       <OrderDetailsModal
         isOpen={showOrderDetails}
         order={selectedOrder}
         onClose={() => setShowOrderDetails(false)}
         onEdit={async (order) => {
-          try {
-            const fullOrderData = await apiService.getOrder(order.id);
-            console.log('🟢 Full edit data:', fullOrderData);
+        try {
+          const fullOrderData = await apiService.getOrder(order.id);
+          console.log('🟢 Full edit data:', fullOrderData);
 
-            setEditingOrder(fullOrderData);
-            setShowOrderDetails(false);
-            setShowCreateOrder(true);
-          } catch (err) {
-            console.error('❌ Failed to fetch full order for editing:', err);
-            alert('Could not load order for editing');
-          }
-        }}
+          setEditingOrder(fullOrderData);
+          setShowOrderDetails(false);
+          setShowCreateOrder(true);
+        } catch (err) {
+          console.error('❌ Failed to fetch full order for editing:', err);
+          alert('Could not load order for editing');
+        }
+      }}
       />
 
       <PaymentModal
