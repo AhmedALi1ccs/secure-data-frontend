@@ -745,19 +745,19 @@ const CalendarView = () => {
           isOpen={showOrderDetails}
           order={selectedOrder}
           onClose={() => setShowOrderDetails(false)}
-          onEdit={async (order) => {
-            try {
-              const fullOrderData = await apiService.getOrder(order.id);
-              console.log('🟢 Full edit data:', fullOrderData);
+           onEdit={async (order) => {
+                  try {
+                    const fullOrderData = await apiService.getOrder(order.id);
+                    console.log('🟢 Full edit data:', fullOrderData);
           
-              setEditingOrder(fullOrderData);
-              setShowOrderDetails(false);
-              setShowCreateOrder(true);
-            } catch (err) {
-              console.error('❌ Failed to fetch full order for editing:', err);
-              alert('Could not load order for editing');
-            }
-          }}
+                    setEditingOrder(fullOrderData);
+                    setShowOrderDetails(false);
+                    setShowCreateOrder(true);
+                  } catch (err) {
+                    console.error('❌ Failed to fetch full order for editing:', err);
+                    alert('Could not load order for editing');
+                  }
+                }}
         />
         <CreateOrderModal
           isOpen={showCreateOrder}

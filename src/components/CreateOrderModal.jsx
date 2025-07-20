@@ -67,24 +67,26 @@ useEffect(() => {
 }, [equipmentAvailability]);
 
 
-  const loadFormData = async () => {
-    try {
-      const [employeesRes, companiesRes, screensRes, equipmentRes] = await Promise.all([
-        apiService.getEmployees({ active_only: true }),
-        apiService.getCompanies({ active_only: true }),
-        apiService.getScreenInventory({ active_only: true }),
-        apiService.getEquipmentAvailabilityForDates()
-      ]);
-      console.log('screensRes:', screensRes.availability);
-      setEmployees(employeesRes.employees || []);
-      setCompanies(companiesRes.companies || []);
-      setScreenInventory(screensRes.availability || []);
-      setEquipmentAvailability(equipmentRes || {});
-    } catch (error) {
-      console.error('Failed to load form data:', error);
-      showNotification('error', 'Loading Error', 'Failed to load form options. Please refresh and try again.');
-    }
-  };
+const loadFormData = async () => {
+  try {
+    const [employeesRes, companiesRes, screensRes] = await Promise.all([
+      apiService.getEmployees({ active_only: true }),
+      apiService.getCompanies({ active_only: true }),
+      apiService.getScreenInventory({ active_only: true })
+    ]);
+    
+    console.log('screensRes:', screensRes.availability);
+    setEmployees(employeesRes.employees || []);
+    setCompanies(companiesRes.companies || []);
+    setScreenInventory(screensRes.availability || []);
+    
+    // Don't load equipment availability here if we have dates, 
+    // let the useEffect handle it with proper exclude_order_id
+  } catch (error) {
+    console.error('Failed to load form data:', error);
+    showNotification('error', 'Loading Error', 'Failed to load form options. Please refresh and try again.');
+  }
+};
   const fetchLocationSuggestions = async (query) => {
   if (!query.trim()) return setLocationSuggestions([]);
   try {
@@ -98,30 +100,46 @@ useEffect(() => {
 
 
 
-  const checkAvailability = async () => {
-    if (!formData.start_date || !formData.end_date) return;
-    
-    try {
-      const response = await apiService.getScreenAvailabilityForDates({
-        start_date: formData.start_date,
-        end_date: formData.end_date
-      });
-      setScreenAvailability(response.availability || []);
-      console.log("here 2")
-      console.log(response.availability)
-    } catch (error) {
-      console.error('Failed to check availability:', error);
+const checkAvailability = async () => {
+  if (!formData.start_date || !formData.end_date) return;
+  
+  try {
+    // Build parameters object
+    const params = {
+      start_date: formData.start_date,
+      end_date: formData.end_date
+    };
+
+    // Add exclude_order_id if we're in edit mode
+    if (isEditMode && editingOrderId) {
+      params.exclude_order_id = editingOrderId;
     }
-  };
+
+    const response = await apiService.getScreenAvailabilityForDates(params);
+    setScreenAvailability(response.availability || []);
+    console.log("Screen availability response:", response.availability);
+  } catch (error) {
+    console.error('Failed to check availability:', error);
+  }
+};
  
 const checkEquipmentAvailability = async () => {
   if (!formData.start_date || !formData.end_date) return;
   
   try {
-    const response = await apiService.getEquipmentAvailabilityForDates(
-      formData.start_date,
-      formData.end_date
-    );
+
+    const params = {
+      start_date: formData.start_date,
+      end_date: formData.end_date
+    };
+
+
+    if (isEditMode && editingOrderId) {
+      params.exclude_order_id = editingOrderId;
+    }
+
+    const response = await apiService.getEquipmentAvailabilityForDates(params);
+    console.log('Equipment availability response:', response);
 
     setEquipmentAvailability(response.availability || {});
   } catch (error) {
@@ -175,12 +193,6 @@ useEffect(() => {
   console.log('🔍 screenRequirements updated:', screenRequirements);
 }, [screenRequirements]);
 
-useEffect(() => {
-  if (formData.start_date && formData.end_date) {
-    checkAvailability();
-    checkEquipmentAvailability(); // Add this line
-  }
-}, [formData.start_date, formData.end_date]);
 
   const showNotification = (type, title, message, details = null) => {
     setNotification({
@@ -409,7 +421,7 @@ const handleSubmit = async (e) => {
 
     console.log('Submitting order:', orderData);
     const response = isEditMode
-      ? await apiService.updateOrder(formData.id, orderData.order)
+      ? await apiService.updateOrder(formData.id, orderData) 
       : await apiService.createOrder(orderData);
 
 
@@ -510,7 +522,9 @@ const handleSubmit = async (e) => {
 const handleClose = async () => {
   if (isEditMode && editingOrderId) {
     try {
-      await apiService.cancelOrderEdit(editingOrderId);
+      // Optional: Call API to cancel edit mode if your backend tracks this
+      // await apiService.cancelOrderEdit(editingOrderId);
+      console.log('🔧 Closing edit mode for order:', editingOrderId);
     } catch (err) {
       console.warn('Failed to cancel edit mode:', err);
     }
