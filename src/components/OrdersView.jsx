@@ -119,19 +119,19 @@ const OrdersView = () => {
   };
 
  const updatePaymentStatus = async (orderId, status, amount) => {
-   try {
-     // 1) increment the payed total
-     await apiService.payOrder(orderId, amount);
-     // 2) update the payment_status
-     await apiService.updateOrder(orderId, { payment_status: status });
-     alert('Payment updated successfully!');
-     setShowPaymentModal(false);
-     loadOrders();
-   } catch (err) {
-     console.error(err);
-     alert('Failed to update payment: ' + err.message);
-   }
- };
+  try {
+    await apiService.updateOrderPayment(orderId, {
+      payment_status: status,
+      amount: amount,
+    });
+    alert('Payment updated successfully!');
+    setShowPaymentModal(false);
+    loadOrders();
+  } catch (err) {
+    alert('Failed to update payment: ' + err.message);
+  }
+};
+
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', { 

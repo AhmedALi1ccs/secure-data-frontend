@@ -155,19 +155,18 @@ useEffect(() => {
   };
 
   const updatePaymentStatus = async (orderId, status, amount) => {
-    try {
-      // 1) increment the payed total
-      await apiService.payOrder(orderId, amount);
-      // 2) update the payment_status
-      await apiService.updateOrder(orderId, { payment_status: status });
-      alert('Payment updated successfully!');
-      setShowPaymentModal(false);
-      loadCalendarData(); // Reload calendar data
-    } catch (err) {
-      console.error(err);
-      alert('Failed to update payment: ' + err.message);
-    }
-  };
+  try {
+    await apiService.updateOrderPayment(orderId, {
+      payment_status: status,
+      amount: amount,
+    });
+    alert('Payment updated successfully!');
+    setShowPaymentModal(false);
+  } catch (err) {
+    alert('Failed to update payment: ' + err.message);
+  }
+};
+
 
   const isAdmin = () => {
     return currentUser?.role === 'admin' || currentUser?.admin === true;
@@ -412,7 +411,7 @@ useEffect(() => {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
                 <div>
-                  {(isViewer() || isAdmin()) &&(
+                  { isAdmin()&&(
                   <div style={{ fontSize: '14px', color: '#374151' }}>
                     <strong>Amount:</strong> {formatCurrency(order.total_amount)}
                   </div>
@@ -426,7 +425,7 @@ useEffect(() => {
                   <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
                     <strong>Status:</strong> {order.order_status}
                   </div>
-                  {(isViewer() || isAdmin()) &&(
+                  { isAdmin() &&(
                   <div style={{ fontSize: '14px', color: '#374151', marginTop: '4px' }}>
                     <strong>Payment:</strong> {order.payment_status}
                   </div>

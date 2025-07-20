@@ -531,6 +531,14 @@ getCompanyStats: async () => {
     return response.data;
   },
 
+  updateOrderPayment: async (orderId, { payment_status, amount }) => {
+  const response = await api.patch(`/orders/${orderId}/update_payment`, {
+    payment_status,
+    amount,
+  });
+  return response.data;
+},
+
   // Equipment endpoints
   getEquipment: async (filters = {}) => {
     const response = await api.get('/equipment', { params: filters });
@@ -551,11 +559,8 @@ getCompanyStats: async () => {
     const response = await api.put(`/equipment/${id}`, { equipment: equipmentData });
     return response.data;
   },
-
-  getEquipmentAvailability: async () => {
-    const response = await api.get('/equipment/availability');
-    return response.data;
-  },
+  
+  
 
   // Finance endpoints
   getFinanceOverview: async (month, year) => {
