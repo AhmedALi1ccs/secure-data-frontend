@@ -126,7 +126,7 @@ const UserManagementView = () => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: window.innerWidth <= 480 ? '2-digit' : 'numeric'
     });
   };
 
@@ -150,8 +150,8 @@ const UserManagementView = () => {
       <div className="dashboard-container">
         <div className="main-content">
           <div className="welcome-section">
-            <h2>Loading Users...</h2>
-            <p>Please wait while we load user data.</p>
+            <h2 style={{ fontSize: window.innerWidth <= 480 ? '18px' : '24px' }}>Loading Users...</h2>
+            <p style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px' }}>Please wait while we load user data.</p>
           </div>
         </div>
       </div>
@@ -162,24 +162,53 @@ const UserManagementView = () => {
     <div className="dashboard-container">
       <div className="main-content">
         <div className="welcome-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
+            justifyContent: 'space-between', 
+            alignItems: window.innerWidth <= 768 ? 'stretch' : 'center',
+            gap: window.innerWidth <= 768 ? '16px' : '0'
+          }}>
             <div>
-              <h2>User Management</h2>
-              <p>Manage user accounts, employees, and access permissions.</p>
+              <h2 style={{ 
+                fontSize: window.innerWidth <= 480 ? '18px' : '24px',
+                margin: 0
+              }}>
+                User Management
+              </h2>
+              <p style={{ 
+                fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                margin: '4px 0 0 0',
+                display: window.innerWidth <= 480 ? 'none' : 'block'
+              }}>
+                Manage user accounts, employees, and access permissions.
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px',
+              flexDirection: window.innerWidth <= 480 ? 'column' : 'row'
+            }}>
               <button 
                 onClick={() => setShowChangePassword(true)}
                 className="action-button secondary"
-                style={{ marginBottom: '0' }}
+                style={{ 
+                  marginBottom: '0',
+                  fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                  padding: window.innerWidth <= 480 ? '8px 12px' : '12px 16px'
+                }}
               >
-                🔐 Change My Password
+                🔐 {window.innerWidth <= 480 ? 'Change Password' : 'Change My Password'}
               </button>
               {currentUser?.admin && (
                 <button 
                   onClick={() => setShowAddEmployee(true)}
                   className="action-button primary"
-                  style={{ marginBottom: '0' }}
+                  style={{ 
+                    marginBottom: '0',
+                    fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                    padding: window.innerWidth <= 480 ? '8px 12px' : '12px 16px'
+                  }}
                 >
                   👤 Add Employee
                 </button>
@@ -190,28 +219,53 @@ const UserManagementView = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="error-message" style={{ marginBottom: '20px' }}>
+          <div className="error-message" style={{ 
+            marginBottom: '20px',
+            fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+            padding: window.innerWidth <= 480 ? '8px 12px' : '12px 16px'
+          }}>
             {error}
           </div>
         )}
 
         {/* Stats Cards */}
-        <div className="stats-grid" style={{ marginBottom: '32px' }}>
-          <div className="stat-card">
-            <h3>Total Users</h3>
-            <div className="value">{stats.total_users || 0}</div>
+        <div className="stats-grid" style={{ 
+          marginBottom: '32px',
+          display: 'grid',
+          gridTemplateColumns: window.innerWidth <= 480 ? '1fr 1fr' : window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: window.innerWidth <= 480 ? '12px' : '16px'
+        }}>
+          <div className="stat-card" style={{ padding: window.innerWidth <= 480 ? '12px' : '16px' }}>
+            <h3 style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px', margin: '0 0 8px 0' }}>
+              {window.innerWidth <= 480 ? 'Total' : 'Total Users'}
+            </h3>
+            <div className="value" style={{ fontSize: window.innerWidth <= 480 ? '18px' : '24px' }}>
+              {stats.total_users || 0}
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Active Users</h3>
-            <div className="value">{stats.active_users || 0}</div>
+          <div className="stat-card" style={{ padding: window.innerWidth <= 480 ? '12px' : '16px' }}>
+            <h3 style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px', margin: '0 0 8px 0' }}>
+              {window.innerWidth <= 480 ? 'Active' : 'Active Users'}
+            </h3>
+            <div className="value" style={{ fontSize: window.innerWidth <= 480 ? '18px' : '24px' }}>
+              {stats.active_users || 0}
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Administrators</h3>
-            <div className="value">{stats.admin_users || 0}</div>
+          <div className="stat-card" style={{ padding: window.innerWidth <= 480 ? '12px' : '16px' }}>
+            <h3 style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px', margin: '0 0 8px 0' }}>
+              {window.innerWidth <= 480 ? 'Admins' : 'Administrators'}
+            </h3>
+            <div className="value" style={{ fontSize: window.innerWidth <= 480 ? '18px' : '24px' }}>
+              {stats.admin_users || 0}
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>Employees</h3>
-            <div className="value">{stats.employee_users || 0}</div>
+          <div className="stat-card" style={{ padding: window.innerWidth <= 480 ? '12px' : '16px' }}>
+            <h3 style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px', margin: '0 0 8px 0' }}>
+              Employees
+            </h3>
+            <div className="value" style={{ fontSize: window.innerWidth <= 480 ? '18px' : '24px' }}>
+              {stats.employee_users || 0}
+            </div>
           </div>
         </div>
 
@@ -219,39 +273,61 @@ const UserManagementView = () => {
         {currentUser?.admin && (
           <div className="card" style={{ marginBottom: '24px' }}>
             <div className="card-header">
-              <h3>🔍 Filters & Search</h3>
+              <h3 style={{ fontSize: window.innerWidth <= 480 ? '14px' : '18px' }}>🔍 Filters & Search</h3>
             </div>
             <div className="card-content">
-              <div className="form-row">
+              <div className="form-row" style={{
+                display: 'grid',
+                gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: window.innerWidth <= 480 ? '12px' : '16px'
+              }}>
                 <div className="form-group">
-                  <label className="form-label">Search Users:</label>
+                  <label className="form-label" style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px' }}>
+                    Search Users:
+                  </label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Search by name or email..."
+                    placeholder={window.innerWidth <= 480 ? "Search..." : "Search by name or email..."}
                     value={filters.q}
                     onChange={(e) => handleFilterChange('q', e.target.value)}
+                    style={{
+                      fontSize: window.innerWidth <= 480 ? '14px' : '16px',
+                      padding: window.innerWidth <= 480 ? '8px 12px' : '12px 16px'
+                    }}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Role:</label>
+                  <label className="form-label" style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px' }}>
+                    Role:
+                  </label>
                   <select
                     className="form-input"
                     value={filters.role}
                     onChange={(e) => handleFilterChange('role', e.target.value)}
+                    style={{
+                      fontSize: window.innerWidth <= 480 ? '14px' : '16px',
+                      padding: window.innerWidth <= 480 ? '8px 12px' : '12px 16px'
+                    }}
                   >
                     <option value="">All Roles</option>
-                    <option value="admin">Administrator</option>
+                    <option value="admin">{window.innerWidth <= 480 ? 'Admin' : 'Administrator'}</option>
                     <option value="user">Employee</option>
                     <option value="viewer">Team Leader</option>
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Status:</label>
+                  <label className="form-label" style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px' }}>
+                    Status:
+                  </label>
                   <select
                     className="form-input"
                     value={filters.active}
                     onChange={(e) => handleFilterChange('active', e.target.value)}
+                    style={{
+                      fontSize: window.innerWidth <= 480 ? '14px' : '16px',
+                      padding: window.innerWidth <= 480 ? '8px 12px' : '12px 16px'
+                    }}
                   >
                     <option value="">All Status</option>
                     <option value="true">Active</option>
@@ -266,62 +342,103 @@ const UserManagementView = () => {
         {/* Users List */}
         <div className="card">
           <div className="card-header">
-            <h3>👥 Users ({pagination.total_count})</h3>
+            <h3 style={{ fontSize: window.innerWidth <= 480 ? '14px' : '18px' }}>
+              👥 Users ({pagination.total_count})
+            </h3>
           </div>
           <div className="card-content">
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div style={{ textAlign: 'center', padding: window.innerWidth <= 480 ? '24px' : '40px' }}>
                 <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" style={{ margin: '0 auto 16px' }}></div>
-                <p>Loading users...</p>
+                <p style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px' }}>Loading users...</p>
               </div>
             ) : users.length > 0 ? (
               <>
                 <div className="items-list">
                   {users.map(user => (
-                    <div key={user.id} className="item-row">
+                    <div key={user.id} className="item-row" style={{
+                      display: 'flex',
+                      flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
+                      gap: window.innerWidth <= 768 ? '12px' : '16px',
+                      padding: window.innerWidth <= 480 ? '12px' : '16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      marginBottom: '12px',
+                      background: 'white'
+                    }}>
                       <div className="item-info" style={{ flex: '1' }}>
-                        <h4>{user.full_name}</h4>
-                        <p>{user.email}</p>
-                        <p style={{ fontSize: '12px', color: '#6b7280' }}>
+                        <h4 style={{
+                          margin: '0 0 4px 0',
+                          fontSize: window.innerWidth <= 480 ? '14px' : '16px',
+                          fontWeight: '600'
+                        }}>
+                          {user.full_name}
+                        </h4>
+                        <p style={{
+                          margin: '0 0 4px 0',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          color: '#6b7280',
+                          wordBreak: 'break-word'
+                        }}>
+                          {user.email}
+                        </p>
+                        <p style={{ 
+                          fontSize: window.innerWidth <= 480 ? '10px' : '12px', 
+                          color: '#6b7280',
+                          margin: '0 0 8px 0',
+                          display: window.innerWidth <= 480 ? 'none' : 'block'
+                        }}>
                           Created: {formatDate(user.created_at)}
                           {user.last_login_at && ` • Last login: ${formatDate(user.last_login_at)}`}
                         </p>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: window.innerWidth <= 480 ? '4px' : '8px', 
+                          marginTop: '8px',
+                          flexWrap: 'wrap'
+                        }}>
                           <span style={{
                             ...getRoleColor(user.role),
-                            padding: '2px 8px',
+                            padding: window.innerWidth <= 480 ? '2px 6px' : '2px 8px',
                             borderRadius: '4px',
-                            fontSize: '12px',
+                            fontSize: window.innerWidth <= 480 ? '10px' : '12px',
                             fontWeight: '500'
                           }}>
                              {user.role === 'admin'
-                            ? 'admin'
-                            : user.role === 'viewer'
-                            ? 'Team Leader'
-                            : 'Employee'}
+                              ? 'admin'
+                              : user.role === 'viewer'
+                              ? window.innerWidth <= 480 ? 'Leader' : 'Team Leader'
+                              : 'Employee'}
                           </span>
                           <span style={{
                             ...getStatusColor(user.is_active),
-                            padding: '2px 8px',
+                            padding: window.innerWidth <= 480 ? '2px 6px' : '2px 8px',
                             borderRadius: '4px',
-                            fontSize: '12px',
+                            fontSize: window.innerWidth <= 480 ? '10px' : '12px',
                             fontWeight: '500'
                           }}>
                             {user.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: window.innerWidth <= 480 ? '4px' : '8px', 
+                        alignItems: window.innerWidth <= 768 ? 'stretch' : 'center',
+                        flexDirection: window.innerWidth <= 480 ? 'column' : 'row',
+                        flexWrap: 'wrap'
+                      }}>
                         <button
                           onClick={() => handleViewUser(user.id)}
                           style={{
                             background: '#3b82f6',
                             color: 'white',
                             border: 'none',
-                            padding: '6px 12px',
+                            padding: window.innerWidth <= 480 ? '4px 8px' : '6px 12px',
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            fontSize: '12px'
+                            fontSize: window.innerWidth <= 480 ? '10px' : '12px',
+                            flex: window.innerWidth <= 480 ? '1' : 'none'
                           }}
                         >
                           View
@@ -335,10 +452,11 @@ const UserManagementView = () => {
                                   background: '#10b981',
                                   color: 'white',
                                   border: 'none',
-                                  padding: '6px 12px',
+                                  padding: window.innerWidth <= 480 ? '4px 8px' : '6px 12px',
                                   borderRadius: '4px',
                                   cursor: 'pointer',
-                                  fontSize: '12px'
+                                  fontSize: window.innerWidth <= 480 ? '10px' : '12px',
+                                  flex: window.innerWidth <= 480 ? '1' : 'none'
                                 }}
                               >
                                 Activate
@@ -350,10 +468,11 @@ const UserManagementView = () => {
                                   background: '#ef4444',
                                   color: 'white',
                                   border: 'none',
-                                  padding: '6px 12px',
+                                  padding: window.innerWidth <= 480 ? '4px 8px' : '6px 12px',
                                   borderRadius: '4px',
                                   cursor: 'pointer',
-                                  fontSize: '12px'
+                                  fontSize: window.innerWidth <= 480 ? '10px' : '12px',
+                                  flex: window.innerWidth <= 480 ? '1' : 'none'
                                 }}
                               >
                                 Deactivate
@@ -365,13 +484,14 @@ const UserManagementView = () => {
                                 background: '#f59e0b',
                                 color: 'white',
                                 border: 'none',
-                                padding: '6px 12px',
+                                padding: window.innerWidth <= 480 ? '4px 8px' : '6px 12px',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
-                                fontSize: '12px'
+                                fontSize: window.innerWidth <= 480 ? '10px' : '12px',
+                                flex: window.innerWidth <= 480 ? '1' : 'none'
                               }}
                             >
-                              Reset Password
+                              {window.innerWidth <= 480 ? 'Reset Pwd' : 'Reset Password'}
                             </button>
                           </>
                         )}
@@ -386,8 +506,9 @@ const UserManagementView = () => {
                     display: 'flex', 
                     justifyContent: 'center', 
                     alignItems: 'center', 
-                    gap: '12px', 
-                    marginTop: '24px' 
+                    gap: window.innerWidth <= 480 ? '8px' : '12px', 
+                    marginTop: '24px',
+                    flexWrap: 'wrap'
                   }}>
                     <button
                       onClick={() => handlePageChange(pagination.current_page - 1)}
@@ -396,14 +517,19 @@ const UserManagementView = () => {
                         background: pagination.current_page === 1 ? '#e5e7eb' : '#3b82f6',
                         color: pagination.current_page === 1 ? '#9ca3af' : 'white',
                         border: 'none',
-                        padding: '8px 16px',
+                        padding: window.innerWidth <= 480 ? '6px 12px' : '8px 16px',
                         borderRadius: '4px',
-                        cursor: pagination.current_page === 1 ? 'not-allowed' : 'pointer'
+                        cursor: pagination.current_page === 1 ? 'not-allowed' : 'pointer',
+                        fontSize: window.innerWidth <= 480 ? '12px' : '14px'
                       }}
                     >
-                      ← Previous
+                      {window.innerWidth <= 480 ? '← Prev' : '← Previous'}
                     </button>
-                    <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                    <span style={{ 
+                      fontSize: window.innerWidth <= 480 ? '12px' : '14px', 
+                      color: '#6b7280',
+                      whiteSpace: 'nowrap'
+                    }}>
                       Page {pagination.current_page} of {pagination.total_pages}
                     </span>
                     <button
@@ -413,21 +539,26 @@ const UserManagementView = () => {
                         background: pagination.current_page === pagination.total_pages ? '#e5e7eb' : '#3b82f6',
                         color: pagination.current_page === pagination.total_pages ? '#9ca3af' : 'white',
                         border: 'none',
-                        padding: '8px 16px',
+                        padding: window.innerWidth <= 480 ? '6px 12px' : '8px 16px',
                         borderRadius: '4px',
-                        cursor: pagination.current_page === pagination.total_pages ? 'not-allowed' : 'pointer'
+                        cursor: pagination.current_page === pagination.total_pages ? 'not-allowed' : 'pointer',
+                        fontSize: window.innerWidth <= 480 ? '12px' : '14px'
                       }}
                     >
-                      Next →
+                      {window.innerWidth <= 480 ? 'Next →' : 'Next →'}
                     </button>
                   </div>
                 )}
               </>
             ) : (
-              <div className="empty-state">
-                <div className="icon">👥</div>
-                <p>No users found</p>
-                <small>Add employees to get started</small>
+              <div className="empty-state" style={{
+                textAlign: 'center',
+                padding: window.innerWidth <= 480 ? '32px 16px' : '48px 24px',
+                color: '#6b7280'
+              }}>
+                <div className="icon" style={{ fontSize: window.innerWidth <= 480 ? '32px' : '48px', marginBottom: '16px' }}>👥</div>
+                <p style={{ fontSize: window.innerWidth <= 480 ? '14px' : '16px', margin: '0 0 8px 0' }}>No users found</p>
+                <small style={{ fontSize: window.innerWidth <= 480 ? '12px' : '14px' }}>Add employees to get started</small>
               </div>
             )}
           </div>
