@@ -3,6 +3,7 @@ import { apiService } from '../services/api';
 import AddInventoryModal from './AddInventoryModal';
 import InventoryDetailsModal from './InventoryDetailsModal';
 import MaintenanceModal from './MaintenanceModal';
+
 const InventoryView = () => {
   const [screenInventory, setScreenInventory] = useState([]);
   const [equipment, setEquipment] = useState([]);
@@ -13,7 +14,8 @@ const InventoryView = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showMaintModal, setShowMaintModal] = useState(false);
-  const [maintItem, setMaintItem]           = useState(null);
+  const [maintItem, setMaintItem] = useState(null);
+  
   // Date range for availability checking
   const [dateRange, setDateRange] = useState({
     start_date: new Date().toISOString().split('T')[0], // Today
@@ -26,7 +28,6 @@ const InventoryView = () => {
     status: '',
     available_only: false
   });
-  
 
   const [inventoryStats, setInventoryStats] = useState({
     screens: { total: 0, available: 0, reserved: 0 },
@@ -39,6 +40,9 @@ const InventoryView = () => {
     screens: [],
     equipment: {}
   });
+
+  const isMobile = window.innerWidth <= 480;
+  const isTablet = window.innerWidth <= 768;
 
   useEffect(() => {
     loadInventoryData();
@@ -63,7 +67,6 @@ const InventoryView = () => {
       setScreenInventory(screenResponse.screen_inventory || []);
       setEquipment(equipmentResponse.equipment || []);
       
-      // Don't calculate stats here - wait for availability check
     } catch (err) {
       setError('Failed to load inventory data: ' + err.message);
       console.error('Inventory load error:', err);
@@ -71,33 +74,31 @@ const InventoryView = () => {
       setLoading(false);
     }
   };
-  const handleSendToMaintenance = (item) => {
-  setMaintItem(item);
-  setShowMaintModal(true);
-};
-const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
-  try {
-    await apiService.createScreenMaintenance(item.id, {
-      sqm: parseFloat(sqm),
-      maintenance_start_date: start_date,
-      maintenance_end_date:   end_date
-    });
-    setShowMaintModal(false);
-    loadInventoryData();
-  } catch (err) {
-    alert('Failed to schedule maintenance: ' + err.message);
-  }
-};
 
+  const handleSendToMaintenance = (item) => {
+    setMaintItem(item);
+    setShowMaintModal(true);
+  };
+
+  const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
+    try {
+      await apiService.createScreenMaintenance(item.id, {
+        sqm: parseFloat(sqm),
+        maintenance_start_date: start_date,
+        maintenance_end_date: end_date
+      });
+      setShowMaintModal(false);
+      loadInventoryData();
+    } catch (err) {
+      alert('Failed to schedule maintenance: ' + err.message);
+    }
+  };
 
   const checkAvailabilityForDateRange = async () => {
     try {
-      // Check screen availability for the date range
-      // If your existing getScreenAvailability method works, use it
       let screenAvailabilityData = [];
       
       try {
-        // Try to get screen availability with the existing method first
         const screenResponse = await apiService.getScreenAvailability?.(
           dateRange.start_date, 
           dateRange.end_date
@@ -108,10 +109,8 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
         }
       } catch (screenErr) {
         console.error('Screen availability error:', screenErr);
-        // If the method doesn't exist or fails, we'll use fallback
       }
       
-      // Check equipment availability for the date range
       const equipmentAvailabilityResponse = await apiService.getEquipmentAvailabilityForDates(
         dateRange.start_date,
         dateRange.end_date
@@ -122,7 +121,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
         equipment: equipmentAvailabilityResponse.availability || {}
       });
       
-      // Calculate stats based on availability data
       calculateInventoryStatsWithAvailability(
         screenInventory, 
         equipment, 
@@ -132,19 +130,17 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
       
     } catch (err) {
       console.error('Availability check error:', err);
-      // If API doesn't support this yet, calculate client-side
       calculateClientSideAvailability();
     }
   };
 
   const calculateClientSideAvailability = () => {
-    // Fallback calculation when API doesn't support date-based availability yet
     const screenAvailability = screenInventory.map(screen => ({
       id: screen.id,
       screen_type: screen.screen_type,
       pixel_pitch: screen.pixel_pitch,
       total_sqm_owned: screen.total_sqm_owned,
-      available_sqm_for_period: screen.available_sqm, // This would need real calculation
+      available_sqm_for_period: screen.available_sqm,
       is_available: screen.available_sqm > 0,
       max_available_for_period: screen.available_sqm
     }));
@@ -158,7 +154,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
       }
     });
     
-    // Calculate stats for fallback
     calculateInventoryStats(screenInventory, equipment);
   };
 
@@ -194,7 +189,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
   };
 
   const calculateInventoryStatsWithAvailability = (screens, equipmentList, screenAvailability, equipmentAvailability) => {
-    // Calculate screen stats from availability data
     const screenStats = {
       total: screenAvailability.reduce((sum, s) => sum + (parseFloat(s.total_sqm_owned) || 0), 0),
       available: screenAvailability.reduce((sum, screen) => sum + (parseFloat(screen.max_available_for_period) || 0), 0),
@@ -202,7 +196,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
     };
     screenStats.reserved = screenStats.total - screenStats.available;
 
-    // Use availability data for equipment stats
     const stats = {
       screens: screenStats,
       laptops: {
@@ -222,7 +215,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
       }
     };
 
-    // Calculate assigned as total - available
     stats.laptops.assigned = stats.laptops.total - stats.laptops.available;
     stats.processors.assigned = stats.processors.total - stats.processors.available;
     stats.cables.assigned = stats.cables.total - stats.cables.available;
@@ -284,7 +276,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
   };
 
   const getFilteredEquipment = (equipmentType) => {
-    // Get availability count for this equipment type
     const availabilityCount = getEquipmentAvailabilityCount(equipmentType);
     
     return equipment.filter(item => {
@@ -294,11 +285,9 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
         item.model?.toLowerCase().includes(filters.search.toLowerCase()) ||
         item.serial_number?.toLowerCase().includes(filters.search.toLowerCase());
       
-      // For status filtering with date-based availability
       let statusMatch = true;
       if (filters.status) {
         if (filters.status === 'available') {
-          // Check if this item is one of the available ones for the date range
           const itemIndex = equipment.filter(eq => eq.equipment_type === equipmentType).indexOf(item);
           statusMatch = itemIndex < availabilityCount;
         } else {
@@ -335,14 +324,12 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
   const exportInventoryData = () => {
     const csvData = [];
     
-    // Headers
     csvData.push([
       'Type', 'Name/Model', 'Serial/ID', 'Status', 'Quantity', 
       'Available for Period', 'Location', 'Purchase Date', 'Value', 'Notes',
       'Period Start', 'Period End'
     ]);
 
-    // LED Screens
     const screensToExport = getFilteredScreens();
     screensToExport.forEach(screen => {
       const availableForPeriod = parseFloat(screen.max_available_for_period !== undefined ? 
@@ -365,7 +352,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
       ]);
     });
 
-    // Equipment
     ['laptop', 'video_processor', 'cable'].forEach(equipmentType => {
       const equipmentItems = getFilteredEquipment(equipmentType);
       equipmentItems.forEach(item => {
@@ -387,7 +373,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
       });
     });
 
-    // Convert to CSV
     const csvContent = csvData.map(row => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -430,19 +415,45 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
               const utilizationPercent = totalOwned > 0 ? (reservedForPeriod / totalOwned) * 100 : 0;
               
               return (
-                <div key={screen.id || `${screen.screen_type}-${screen.pixel_pitch}`} className="item-row">
+                <div key={screen.id || `${screen.screen_type}-${screen.pixel_pitch}`} className="item-row" style={{
+                  display: 'flex',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  gap: isMobile ? '12px' : '16px',
+                  padding: isMobile ? '12px' : '16px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                  background: 'white'
+                }}>
                   <div className="item-info" style={{ flex: 1 }}>
-                    <h4>{screen.screen_type} (P{screen.pixel_pitch})</h4>
-                    <p>{screen.description || `Pixel Pitch: ${screen.pixel_pitch}mm`}</p>
-                    <p style={{ fontSize: '12px', color: '#6b7280' }}>
-                      Total: {totalOwned}m² • Available for period: {availableForPeriod}m² • 
+                    <h4 style={{
+                      margin: '0 0 8px 0',
+                      fontSize: isMobile ? '14px' : '16px',
+                      fontWeight: '600'
+                    }}>
+                      {screen.screen_type} (P{screen.pixel_pitch})
+                    </h4>
+                    <p style={{
+                      margin: '0 0 8px 0',
+                      fontSize: isMobile ? '12px' : '14px',
+                      color: '#6b7280'
+                    }}>
+                      {screen.description || `Pixel Pitch: ${screen.pixel_pitch}mm`}
+                    </p>
+                    <p style={{ 
+                      fontSize: isMobile ? '10px' : '12px', 
+                      color: '#6b7280',
+                      margin: '0 0 8px 0',
+                      lineHeight: '1.4'
+                    }}>
+                      Total: {totalOwned}m² • Available: {availableForPeriod}m² • 
                       Reserved: {reservedForPeriod.toFixed(1)}m² • Utilization: {utilizationPercent.toFixed(1)}%
                     </p>
                     
                     {/* Utilization Bar */}
                     <div style={{ 
                       width: '100%', 
-                      height: '6px', 
+                      height: isMobile ? '4px' : '6px', 
                       background: '#e5e7eb', 
                       borderRadius: '3px',
                       overflow: 'hidden',
@@ -458,55 +469,75 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
                       ></div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'row' : 'column',
+                    gap: isMobile ? '4px' : '8px', 
+                    alignItems: isMobile ? 'center' : 'flex-end',
+                    justifyContent: isMobile ? 'space-between' : 'center',
+                    flexWrap: 'wrap'
+                  }}>
                     <span style={{
-                      padding: '2px 8px',
+                      padding: isMobile ? '3px 6px' : '4px 8px',
                       borderRadius: '4px',
-                      fontSize: '12px',
+                      fontSize: isMobile ? '10px' : '12px',
                       fontWeight: '500',
                       background: availableForPeriod > 0 ? '#d1fae5' : '#fee2e2',
-                      color: availableForPeriod > 0 ? '#10b981' : '#ef4444'
+                      color: availableForPeriod > 0 ? '#10b981' : '#ef4444',
+                      whiteSpace: 'nowrap'
                     }}>
-                      {availableForPeriod > 0 ? 'Available' : 'Fully Reserved'}
+                      {availableForPeriod > 0 ? 'Available' : 'Reserved'}
                     </span>
-                    <button
-                      onClick={() => handleViewDetails(screen, 'screen')}
-                      style={{
-                        background: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        padding: '6px 12px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      View
-                    </button>
-                    <button
-  onClick={() => handleSendToMaintenance(screen)}
-  style={{
-    background: '#f59e0b',
-    color: 'white',
-    border: 'none',
-    padding: '6px 12px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px'
-  }}
->
-  🔧 Maintenance
-</button>
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '4px',
+                      flexWrap: 'wrap'
+                    }}>
+                      <button
+                        onClick={() => handleViewDetails(screen, 'screen')}
+                        style={{
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          padding: isMobile ? '4px 8px' : '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: isMobile ? '10px' : '12px',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {isMobile ? 'View' : 'View Details'}
+                      </button>
+                      <button
+                        onClick={() => handleSendToMaintenance(screen)}
+                        style={{
+                          background: '#f59e0b',
+                          color: 'white',
+                          border: 'none',
+                          padding: isMobile ? '4px 8px' : '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: isMobile ? '10px' : '12px',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {isMobile ? '🔧' : '🔧 Maintenance'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="empty-state">
-            <div className="icon">📺</div>
-            <p>No LED screens available for selected period</p>
-            <small>Try adjusting your date range or search criteria</small>
+          <div className="empty-state" style={{
+            textAlign: 'center',
+            padding: isMobile ? '32px 16px' : '48px 24px',
+            color: '#6b7280'
+          }}>
+            <div className="icon" style={{ fontSize: isMobile ? '32px' : '48px', marginBottom: '16px' }}>📺</div>
+            <p style={{ fontSize: isMobile ? '14px' : '16px', margin: '0 0 8px 0' }}>No LED screens available for selected period</p>
+            <small style={{ fontSize: isMobile ? '12px' : '14px' }}>Try adjusting your date range or search criteria</small>
           </div>
         )}
       </div>
@@ -515,7 +546,6 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
 
   const renderEquipmentInventory = (equipmentType, title) => {
     const filteredEquipment = getFilteredEquipment(equipmentType);
-    const availableCount = getEquipmentAvailabilityCount(equipmentType);
     
     return (
       <div>
@@ -525,69 +555,121 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
               const isAvailable = isEquipmentAvailableForPeriod(item);
               
               return (
-                <div key={item.id} className="item-row">
+                <div key={item.id} className="item-row" style={{
+                  display: 'flex',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  gap: isMobile ? '12px' : '16px',
+                  padding: isMobile ? '12px' : '16px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                  background: 'white'
+                }}>
                   <div className="item-info" style={{ flex: 1 }}>
-                    <h4>{item.model || `${equipmentType.replace('_', ' ')} ${item.id}`}</h4>
-                    <p>Serial: {item.serial_number || 'Not assigned'}</p>
-                    <p style={{ fontSize: '12px', color: '#6b7280' }}>
-                      {item.purchase_date && `Purchased: ${new Date(item.purchase_date).toLocaleDateString()}`}
-                      {item.purchase_price && ` • Value: ${item.purchase_price} SAR`}
+                    <h4 style={{
+                      margin: '0 0 8px 0',
+                      fontSize: isMobile ? '14px' : '16px',
+                      fontWeight: '600'
+                    }}>
+                      {item.model || `${equipmentType.replace('_', ' ')} ${item.id}`}
+                    </h4>
+                    <p style={{
+                      margin: '0 0 4px 0',
+                      fontSize: isMobile ? '12px' : '14px',
+                      color: '#374151'
+                    }}>
+                      Serial: {item.serial_number || 'Not assigned'}
                     </p>
+                    {(item.purchase_date || item.purchase_price) && (
+                      <p style={{ 
+                        fontSize: isMobile ? '10px' : '12px', 
+                        color: '#6b7280',
+                        margin: '0 0 4px 0'
+                      }}>
+                        {item.purchase_date && `Purchased: ${new Date(item.purchase_date).toLocaleDateString()}`}
+                        {item.purchase_price && ` • Value: ${item.purchase_price} SAR`}
+                      </p>
+                    )}
                     {item.notes && (
-                      <p style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>
+                      <p style={{ 
+                        fontSize: isMobile ? '10px' : '12px', 
+                        color: '#6b7280', 
+                        fontStyle: 'italic',
+                        margin: 0
+                      }}>
                         {item.notes}
                       </p>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'row' : 'column',
+                    gap: isMobile ? '4px' : '8px', 
+                    alignItems: isMobile ? 'center' : 'flex-end',
+                    justifyContent: isMobile ? 'space-between' : 'center',
+                    flexWrap: 'wrap'
+                  }}>
                     <span style={{
-                      padding: '2px 8px',
+                      padding: isMobile ? '3px 6px' : '4px 8px',
                       borderRadius: '4px',
-                      fontSize: '12px',
+                      fontSize: isMobile ? '10px' : '12px',
                       fontWeight: '500',
                       background: isAvailable ? '#d1fae5' : '#fee2e2',
-                      color: isAvailable ? '#10b981' : '#ef4444'
+                      color: isAvailable ? '#10b981' : '#ef4444',
+                      whiteSpace: 'nowrap'
                     }}>
-                      {isAvailable ? 'Available' : 'Reserved'} for period
+                      {isAvailable ? 'Available' : 'Reserved'} {isMobile ? '' : 'for period'}
                     </span>
-                    <button
-                      onClick={() => handleViewDetails(item, 'equipment')}
-                      style={{
-                        background: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        padding: '6px 12px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      View
-                    </button>
-                    <button
-  onClick={() => handleSendToMaintenance(item)}
-  style={{
-    background: '#f59e0b',
-    color: 'white',
-    border: 'none',
-    padding: '6px 12px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px'
-  }}
->
-  🔧 Maintenance
-</button>
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '4px',
+                      flexWrap: 'wrap'
+                    }}>
+                      <button
+                        onClick={() => handleViewDetails(item, 'equipment')}
+                        style={{
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          padding: isMobile ? '4px 8px' : '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: isMobile ? '10px' : '12px',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {isMobile ? 'View' : 'View Details'}
+                      </button>
+                      <button
+                        onClick={() => handleSendToMaintenance(item)}
+                        style={{
+                          background: '#f59e0b',
+                          color: 'white',
+                          border: 'none',
+                          padding: isMobile ? '4px 8px' : '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: isMobile ? '10px' : '12px',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {isMobile ? '🔧' : '🔧 Maintenance'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="empty-state">
-            <div className="icon">🔧</div>
-            <p>No {title.toLowerCase()} found</p>
-            <small>Try adjusting your search criteria</small>
+          <div className="empty-state" style={{
+            textAlign: 'center',
+            padding: isMobile ? '32px 16px' : '48px 24px',
+            color: '#6b7280'
+          }}>
+            <div className="icon" style={{ fontSize: isMobile ? '32px' : '48px', marginBottom: '16px' }}>🔧</div>
+            <p style={{ fontSize: isMobile ? '14px' : '16px', margin: '0 0 8px 0' }}>No {title.toLowerCase()} found</p>
+            <small style={{ fontSize: isMobile ? '12px' : '14px' }}>Try adjusting your search criteria</small>
           </div>
         )}
       </div>
@@ -599,8 +681,8 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
       <div className="dashboard-container">
         <div className="main-content">
           <div className="welcome-section">
-            <h2>Loading Inventory...</h2>
-            <p>Please wait while we load your inventory data.</p>
+            <h2 style={{ fontSize: isMobile ? '18px' : '24px' }}>Loading Inventory...</h2>
+            <p style={{ fontSize: isMobile ? '12px' : '14px' }}>Please wait while we load your inventory data.</p>
           </div>
         </div>
       </div>
@@ -611,25 +693,54 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
     <div className="dashboard-container">
       <div className="main-content">
         <div className="welcome-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: 'space-between', 
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? '16px' : '12px'
+          }}>
             <div>
-              <h2>Inventory Management</h2>
-              <p>Track and manage your LED screens, laptops, video processors, and cables.</p>
+              <h2 style={{ 
+                fontSize: isMobile ? '18px' : '24px',
+                margin: 0
+              }}>
+                Inventory Management
+              </h2>
+              <p style={{ 
+                fontSize: isMobile ? '12px' : '14px',
+                margin: '4px 0 0 0',
+                display: isMobile ? 'none' : 'block'
+              }}>
+                Track and manage your LED screens, laptops, video processors, and cables.
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: isMobile ? '8px' : '12px',
+              flexDirection: isMobile ? 'column' : 'row'
+            }}>
               <button 
                 onClick={handleAddItem}
                 className="action-button primary"
-                style={{ marginBottom: '0' }}
+                style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '12px' : '14px',
+                  padding: isMobile ? '8px 12px' : '12px 16px'
+                }}
               >
-                ➕ Add Item
+                ➕ {isMobile ? 'Add' : 'Add Item'}
               </button>
               <button 
                 onClick={exportInventoryData}
                 className="action-button secondary"
-                style={{ marginBottom: '0' }}
+                style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '12px' : '14px',
+                  padding: isMobile ? '8px 12px' : '12px 16px'
+                }}
               >
-                📊 Export CSV
+                📊 {isMobile ? 'Export' : 'Export CSV'}
               </button>
             </div>
           </div>
@@ -637,7 +748,11 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
 
         {/* Error Message */}
         {error && (
-          <div className="error-message" style={{ marginBottom: '20px' }}>
+          <div className="error-message" style={{ 
+            marginBottom: '20px',
+            fontSize: isMobile ? '12px' : '14px',
+            padding: isMobile ? '8px 12px' : '12px 16px'
+          }}>
             {error}
           </div>
         )}
@@ -645,37 +760,43 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
         {/* Date Range Selection */}
         <div className="card" style={{ marginBottom: '24px' }}>
           <div className="card-header">
-            <h3>📅 Check Availability for Period</h3>
+            <h3 style={{ fontSize: isMobile ? '14px' : '18px' }}>📅 Check Availability for Period</h3>
           </div>
           <div className="card-content">
-            <div className="form-row">
+            <div className="form-row" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: isMobile ? '12px' : '16px'
+            }}>
               <div className="form-group">
-                <label className="form-label">Start Date:</label>
+                <label className="form-label" style={{ fontSize: isMobile ? '12px' : '14px' }}>Start Date:</label>
                 <input
                   type="date"
                   className="form-input"
                   value={dateRange.start_date}
                   onChange={(e) => handleDateRangeChange('start_date', e.target.value)}
+                  style={{ fontSize: isMobile ? '12px' : '14px' }}
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">End Date:</label>
+                <label className="form-label" style={{ fontSize: isMobile ? '12px' : '14px' }}>End Date:</label>
                 <input
                   type="date"
                   className="form-input"
                   value={dateRange.end_date}
                   onChange={(e) => handleDateRangeChange('end_date', e.target.value)}
                   min={dateRange.start_date}
+                  style={{ fontSize: isMobile ? '12px' : '14px' }}
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Period Duration:</label>
+                <label className="form-label" style={{ fontSize: isMobile ? '12px' : '14px' }}>Period Duration:</label>
                 <p style={{ 
                   margin: '8px 0', 
-                  padding: '8px 12px', 
+                  padding: isMobile ? '6px 8px' : '8px 12px', 
                   background: '#f3f4f6', 
                   borderRadius: '4px',
-                  fontSize: '14px',
+                  fontSize: isMobile ? '12px' : '14px',
                   fontWeight: '500'
                 }}>
                   {Math.ceil((new Date(dateRange.end_date) - new Date(dateRange.start_date)) / (1000 * 60 * 60 * 24)) + 1} days
@@ -683,12 +804,13 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
               </div>
             </div>
             <div style={{ 
-              padding: '12px', 
+              padding: isMobile ? '8px' : '12px', 
               background: '#eff6ff', 
               borderRadius: '6px', 
-              fontSize: '14px', 
+              fontSize: isMobile ? '12px' : '14px', 
               color: '#1e40af',
-              marginTop: '12px'
+              marginTop: '12px',
+              lineHeight: '1.4'
             }}>
               💡 <strong>Checking availability from {new Date(dateRange.start_date).toLocaleDateString()} to {new Date(dateRange.end_date).toLocaleDateString()}</strong>
               <br />All availability numbers below reflect this specific time period.
@@ -697,54 +819,71 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
         </div>
 
         {/* Stats Grid */}
-        <div className="stats-grid" style={{ marginBottom: '32px' }}>
-          <div className="stat-card">
-            <h3>LED Screens</h3>
-            <div className="value">{inventoryStats.screens.available} / {inventoryStats.screens.total} m²</div>
-            <small style={{ color: '#6b7280' }}>Available / Total</small>
+        <div className="stats-grid" style={{ 
+          marginBottom: '32px',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? '12px' : '16px'
+        }}>
+          <div className="stat-card" style={{ padding: isMobile ? '12px' : '16px' }}>
+            <h3 style={{ fontSize: isMobile ? '12px' : '14px', margin: '0 0 8px 0' }}>LED Screens</h3>
+            <div className="value" style={{ fontSize: isMobile ? '18px' : '24px' }}>
+              {inventoryStats.screens.available} / {inventoryStats.screens.total} m²
+            </div>
+            <small style={{ color: '#6b7280', fontSize: isMobile ? '10px' : '12px' }}>Available / Total</small>
           </div>
-          <div className="stat-card">
-            <h3>Laptops</h3>
-            <div className="value">{inventoryStats.laptops.available} / {inventoryStats.laptops.total}</div>
-            <small style={{ color: '#6b7280' }}>Available / Total</small>
+          <div className="stat-card" style={{ padding: isMobile ? '12px' : '16px' }}>
+            <h3 style={{ fontSize: isMobile ? '12px' : '14px', margin: '0 0 8px 0' }}>Laptops</h3>
+            <div className="value" style={{ fontSize: isMobile ? '18px' : '24px' }}>
+              {inventoryStats.laptops.available} / {inventoryStats.laptops.total}
+            </div>
+            <small style={{ color: '#6b7280', fontSize: isMobile ? '10px' : '12px' }}>Available / Total</small>
           </div>
-          <div className="stat-card">
-            <h3>Video Processors</h3>
-            <div className="value">{inventoryStats.processors.available} / {inventoryStats.processors.total}</div>
-            <small style={{ color: '#6b7280' }}>Available / Total</small>
+          <div className="stat-card" style={{ padding: isMobile ? '12px' : '16px' }}>
+            <h3 style={{ fontSize: isMobile ? '12px' : '14px', margin: '0 0 8px 0' }}>
+              {isMobile ? 'Processors' : 'Video Processors'}
+            </h3>
+            <div className="value" style={{ fontSize: isMobile ? '18px' : '24px' }}>
+              {inventoryStats.processors.available} / {inventoryStats.processors.total}
+            </div>
+            <small style={{ color: '#6b7280', fontSize: isMobile ? '10px' : '12px' }}>Available / Total</small>
           </div>
-          <div className="stat-card">
-            <h3>Cables</h3>
-            <div className="value">{inventoryStats.cables.available} / {inventoryStats.cables.total}</div>
-            <small style={{ color: '#6b7280' }}>Available / Total</small>
+          <div className="stat-card" style={{ padding: isMobile ? '12px' : '16px' }}>
+            <h3 style={{ fontSize: isMobile ? '12px' : '14px', margin: '0 0 8px 0' }}>Cables</h3>
+            <div className="value" style={{ fontSize: isMobile ? '18px' : '24px' }}>
+              {inventoryStats.cables.available} / {inventoryStats.cables.total}
+            </div>
+            <small style={{ color: '#6b7280', fontSize: isMobile ? '10px' : '12px' }}>Available / Total</small>
           </div>
         </div>
 
         {/* Tabs */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '24px', overflowX: 'auto' }}>
           <div style={{ 
             display: 'flex', 
             borderBottom: '1px solid #e5e7eb',
-            gap: '0'
+            gap: '0',
+            minWidth: 'fit-content'
           }}>
             {[
-              { id: 'screens', label: '📺 LED Screens', icon: '📺' },
-              { id: 'laptops', label: '💻 Laptops', icon: '💻' },
-              { id: 'processors', label: '🖥️ Video Processors', icon: '🖥️' },
-              { id: 'cables', label: '🔌 Cables', icon: '🔌' }
+              { id: 'screens', label: isMobile ? '📺 Screens' : '📺 LED Screens', icon: '📺' },
+              { id: 'laptops', label: isMobile ? '💻 Laptops' : '💻 Laptops', icon: '💻' },
+              { id: 'processors', label: isMobile ? '🖥️ Proc.' : '🖥️ Video Processors', icon: '🖥️' },
+              { id: 'cables', label: isMobile ? '🔌 Cables' : '🔌 Cables', icon: '🔌' }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  padding: '12px 24px',
+                  padding: isMobile ? '8px 12px' : '12px 24px',
                   border: 'none',
                   background: activeTab === tab.id ? 'white' : 'transparent',
                   borderBottom: activeTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent',
                   color: activeTab === tab.id ? '#3b82f6' : '#6b7280',
                   cursor: 'pointer',
                   fontWeight: activeTab === tab.id ? '600' : '500',
-                  fontSize: '14px'
+                  fontSize: isMobile ? '12px' : '14px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {tab.label}
@@ -756,26 +895,32 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
         {/* Filters */}
         <div className="card" style={{ marginBottom: '24px' }}>
           <div className="card-header">
-            <h3>🔍 Filters & Search</h3>
+            <h3 style={{ fontSize: isMobile ? '14px' : '18px' }}>🔍 Filters & Search</h3>
           </div>
           <div className="card-content">
-            <div className="form-row">
+            <div className="form-row" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: isMobile ? '12px' : '16px'
+            }}>
               <div className="form-group">
-                <label className="form-label">Search:</label>
+                <label className="form-label" style={{ fontSize: isMobile ? '12px' : '14px' }}>Search:</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="Search by name, model, serial number..."
+                  placeholder={isMobile ? "Search..." : "Search by name, model, serial number..."}
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  style={{ fontSize: isMobile ? '12px' : '14px' }}
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Status:</label>
+                <label className="form-label" style={{ fontSize: isMobile ? '12px' : '14px' }}>Status:</label>
                 <select
                   className="form-input"
                   value={filters.status}
                   onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                  style={{ fontSize: isMobile ? '12px' : '14px' }}
                 >
                   <option value="">All Status</option>
                   {activeTab === 'screens' ? (
@@ -795,14 +940,18 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
               </div>
             </div>
             <div style={{ marginTop: '12px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', fontSize: '14px' }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                fontSize: isMobile ? '12px' : '14px',
+                gap: '8px'
+              }}>
                 <input
                   type="checkbox"
                   checked={filters.available_only}
                   onChange={(e) => setFilters(prev => ({ ...prev, available_only: e.target.checked }))}
-                  style={{ marginRight: '8px' }}
                 />
-                Show only available items for selected period
+                {isMobile ? 'Available only' : 'Show only available items for selected period'}
               </label>
             </div>
           </div>
@@ -811,13 +960,19 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
         {/* Inventory Content */}
         <div className="card">
           <div className="card-header">
-            <h3>
-              {activeTab === 'screens' && '📺 LED Screens'}
+            <h3 style={{ fontSize: isMobile ? '14px' : '18px' }}>
+              {activeTab === 'screens' && (isMobile ? '📺 Screens' : '📺 LED Screens')}
               {activeTab === 'laptops' && '💻 Laptops'}
-              {activeTab === 'processors' && '🖥️ Video Processors'}
+              {activeTab === 'processors' && (isMobile ? '🖥️ Processors' : '🖥️ Video Processors')}
               {activeTab === 'cables' && '🔌 Cables'}
-              <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: 'normal', marginLeft: '8px' }}>
-                (for {new Date(dateRange.start_date).toLocaleDateString()} - {new Date(dateRange.end_date).toLocaleDateString()})
+              <span style={{ 
+                fontSize: isMobile ? '10px' : '14px', 
+                color: '#6b7280', 
+                fontWeight: 'normal', 
+                marginLeft: '8px',
+                display: isMobile ? 'block' : 'inline'
+              }}>
+                ({new Date(dateRange.start_date).toLocaleDateString()} - {new Date(dateRange.end_date).toLocaleDateString()})
               </span>
             </h3>
           </div>
@@ -841,7 +996,8 @@ const submitMaintenance = async (item, { start_date, end_date, sqm }) => {
         onClose={() => setShowDetailsModal(false)}
         onUpdate={loadInventoryData}
       />
-       <MaintenanceModal
+       
+      <MaintenanceModal
         isOpen={showMaintModal}
         item={maintItem}
         onClose={() => setShowMaintModal(false)}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
 import NotificationModal from './NotificationModal';
 
-const CreateOrderModal = ({ isOpen, onClose, onSuccess, initialData, isEditMode }) => {
+const CreateOrderModal = ({ isOpen, onClose, onSuccess, initialData, isEditMode, editingOrderId}) => {
   const [formData, setFormData] = useState({
      id: '',
     google_maps_link: '',
@@ -507,9 +507,21 @@ const handleSubmit = async (e) => {
 
   if (!isOpen) return null;
 
+const handleClose = async () => {
+  if (isEditMode && editingOrderId) {
+    try {
+      await apiService.cancelOrderEdit(editingOrderId);
+    } catch (err) {
+      console.warn('Failed to cancel edit mode:', err);
+    }
+  }
+  onClose();
+};
+
+
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay" onClick={handleClose}>
         <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px', maxHeight: '90vh', overflow: 'auto' }}>
           <h3>{isEditMode ? 'Edit Order' : 'Create New Order'}</h3>
 
@@ -959,7 +971,7 @@ const handleSubmit = async (e) => {
             <div className="form-actions">
               <button 
                 type="button" 
-                onClick={onClose} 
+                onClick={handleClose}
                 className="action-button secondary"
                 disabled={loading}
               >

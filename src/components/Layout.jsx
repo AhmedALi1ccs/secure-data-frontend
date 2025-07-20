@@ -5,7 +5,7 @@ import moment from 'moment-hijri';
 
 const Layout = ({ children, currentView, onViewChange }) => {
   const { user, logout } = useAuth();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth <= 480);
   const todayHijri = moment().format('iD iMMMM iYYYY');
 
   const allMenu = [
