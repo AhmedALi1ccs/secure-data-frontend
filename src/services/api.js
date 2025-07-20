@@ -35,10 +35,21 @@ export const apiService = {
     const response = await api.post('/auth/login', { user: credentials });
     return response.data;
   },
-  getEquipmentAvailabilityForDates: async (startDate, endDate) => {
-  const response = await api.get('/equipment/availability_for_dates', {
-    params: { start_date: startDate, end_date: endDate }
-  });
+getEquipmentAvailabilityForDates: async (startDateOrParams, endDate) => {
+  let params;
+  
+  if (typeof startDateOrParams === 'object') {
+    // New format: first parameter is an object with all parameters
+    params = startDateOrParams;
+  } else {
+    // Old format: separate start_date and end_date parameters
+    params = {
+      start_date: startDateOrParams,
+      end_date: endDate
+    };
+  }
+  
+  const response = await api.get('/equipment/availability_for_dates', { params });
   return response.data;
 },
 
@@ -512,24 +523,11 @@ getCompanyStats: async () => {
     return response.data;
   },
 
-  getScreenAvailability: async (startDate, endDate, requiredSqm, pixelPitch) => {
-    const response = await api.get('/screen_inventory/availability', {
-      params: { 
-        start_date: startDate, 
-        end_date: endDate, 
-        required_sqm: requiredSqm,
-        pixel_pitch: pixelPitch 
-      }
-    });
-    return response.data;
-  },
-  
+getScreenAvailabilityForDates: async (params) => {
+  const response = await api.get('/screen_inventory/availability', { params });
+  return response.data;
+},
 
-  // NEW: Get screen availability for specific date range (for CreateOrderModal)
-  getScreenAvailabilityForDates: async (params) => {
-    const response = await api.get('/screen_inventory/availability', { params });
-    return response.data;
-  },
 
   updateOrderPayment: async (orderId, { payment_status, amount }) => {
   const response = await api.patch(`/orders/${orderId}/update_payment`, {
